@@ -54,28 +54,45 @@ struct DatePickerView: View {
                         GridItem(.flexible())
                     ], spacing: 12) {
                         QuickDateButton(title: "Today", date: Calendar.current.startOfDay(for: Date())) {
-                            tempDate = Calendar.current.startOfDay(for: Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                         
                         QuickDateButton(title: "Tomorrow", date: Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())) {
-                            tempDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                         
                         QuickDateButton(title: "Next Week", date: Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .weekOfYear, value: 1, to: Date()) ?? Date())) {
-                            tempDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .weekOfYear, value: 1, to: Date()) ?? Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .weekOfYear, value: 1, to: Date()) ?? Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                         
                         QuickDateButton(title: "Next Month", date: Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date())) {
-                            tempDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                         
                         QuickDateButton(title: "Birthday", date: Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()), month: 6, day: 15)) ?? Date())) {
-                            // Example birthday - you can customize this
-                            tempDate = Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()), month: 6, day: 15)) ?? Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()), month: 6, day: 15)) ?? Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                         
                         QuickDateButton(title: "New Year", date: Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()) + 1, month: 1, day: 1)) ?? Date())) {
-                            tempDate = Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()) + 1, month: 1, day: 1)) ?? Date())
+                            let normalizedDate = Calendar.current.startOfDay(for: Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()) + 1, month: 1, day: 1)) ?? Date())
+                            tempDate = normalizedDate
+                            selectedDate = normalizedDate
+                            isPresented = false
                         }
                     }
                 }
@@ -95,7 +112,8 @@ struct DatePickerView: View {
                     .cornerRadius(8)
                     
                     Button("Go to Date") {
-                        selectedDate = Calendar.current.startOfDay(for: tempDate)
+                        let normalizedDate = Calendar.current.startOfDay(for: tempDate)
+                        selectedDate = normalizedDate
                         isPresented = false
                     }
                     .frame(maxWidth: .infinity)

@@ -187,9 +187,26 @@ struct DraggablePhoto: View {
         let resizeHandle = Group {
             if isSelected {
                 VStack {
-                    Spacer()
                     HStack {
                         Spacer()
+                        // Delete button
+                        Button(action: {
+                            print("Delete button tapped for photo: \(photoItem.id)")
+                            onDelete()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.title2)
+                                .background(Color.white.clipShape(Circle()))
+                        }
+                        .offset(x: 10, y: -10)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack {
+                        Spacer()
+                        // Resize handle
                         Circle()
                             .fill(Color.blue)
                             .frame(width: 20, height: 20)
@@ -203,27 +220,50 @@ struct DraggablePhoto: View {
         return borderedImage
             .overlay(resizeHandle)
             .position(photoItem.position)
-            .onTapGesture { isSelected.toggle() }
-            .gesture(moveGesture)
+            .onTapGesture { 
+                isSelected.toggle()
+                initialSize = photoItem.size
+                initialPosition = photoItem.position
+            }
+            .gesture(
+                DragGesture(minimumDistance: 5)
+                    .onChanged { value in
+                        let translation = value.translation
+                        let newPosition = CGPoint(
+                            x: initialPosition.x + translation.width,
+                            y: initialPosition.y + translation.height
+                        )
+                        onMove(newPosition)
+                    }
+                    .onEnded { _ in
+                        initialPosition = photoItem.position
+                    }
+            )
             .contextMenu {
-                Button("Delete", role: .destructive) { onDelete() }
+                Button("Delete", role: .destructive) { 
+                    print("Delete button pressed for photo: \(photoItem.id)")
+                    onDelete() 
+                }
+            }
+            .onAppear {
+                initialSize = photoItem.size
+                initialPosition = photoItem.position
             }
     }
+    
+    @State private var initialSize: CGSize = CGSize.zero
+    @State private var initialPosition: CGPoint = CGPoint.zero
     
     private var resizeGesture: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 2)
             .onChanged { value in
                 let translation = value.translation
-                let newWidth = max(50, photoItem.size.width + translation.width)
-                let newHeight = max(50, photoItem.size.height + translation.height)
+                let newWidth = max(50, initialSize.width + translation.width)
+                let newHeight = max(50, initialSize.height + translation.height)
                 onResize(CGSize(width: newWidth, height: newHeight))
             }
-    }
-    
-    private var moveGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                onMove(value.location)
+            .onEnded { _ in
+                initialSize = photoItem.size
             }
     }
 }

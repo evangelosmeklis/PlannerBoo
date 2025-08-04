@@ -14,7 +14,7 @@ struct DrawingToolbar: View {
     ]
     
     private let thicknessOptions: [CGFloat] = [2, 5, 10] // Thin, Medium, Thick
-    private let eraserSizes: [CGFloat] = [10, 20, 40] // Small, Medium, Large
+    private let eraserSizes: [CGFloat] = [20, 40, 80] // Medium, Large, Extra Large
     
     var body: some View {
         VStack(spacing: 8) {

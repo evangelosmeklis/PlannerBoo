@@ -10,7 +10,7 @@ struct DailyPlannerPage: View {
     @State private var selectedTool = PKInkingTool(.pen, color: .black, width: 5)
     @State private var showEraser = false
     @State private var showDrawingToolbar = true
-    @State private var eraserSize: CGFloat = 20
+    @State private var eraserSize: CGFloat = 40
     @EnvironmentObject var permissionsManager: PermissionsManager
     
     private var dateFormatter: DateFormatter {
