@@ -13,10 +13,12 @@ struct DraggablePhotoOverlay: View {
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    // Deselect any selected photo when tapping empty space
-                    selectedPhotoId = nil
+                    // Deselect any selected photo when tapping empty space in hand mode
+                    if toolMode == .hand {
+                        selectedPhotoId = nil
+                    }
                 }
-                .allowsHitTesting(selectedPhotoId != nil) // Only intercept taps when a photo is selected
+                .allowsHitTesting(toolMode == .hand) // Only intercept taps when in hand mode
             
             // Only show photos if they exist
             ForEach(photoItems) { item in
@@ -251,20 +253,22 @@ struct DraggablePhoto: View {
             }
             .gesture(
                 // Only allow dragging when in hand mode and selected
-                (toolMode == .hand && isSelected) ? 
-                DragGesture(minimumDistance: 5)
+                DragGesture(minimumDistance: (toolMode == .hand && isSelected) ? 5 : 1000)
                     .onChanged { value in
-                        let translation = value.translation
-                        let newPosition = CGPoint(
-                            x: initialPosition.x + translation.width,
-                            y: initialPosition.y + translation.height
-                        )
-                        onMove(newPosition)
+                        if toolMode == .hand && isSelected {
+                            let translation = value.translation
+                            let newPosition = CGPoint(
+                                x: initialPosition.x + translation.width,
+                                y: initialPosition.y + translation.height
+                            )
+                            onMove(newPosition)
+                        }
                     }
                     .onEnded { _ in
-                        initialPosition = photoItem.position
+                        if toolMode == .hand && isSelected {
+                            initialPosition = photoItem.position
+                        }
                     }
-                : nil
             )
             .contextMenu {
                 Button("Delete", role: .destructive) { 
@@ -283,15 +287,20 @@ struct DraggablePhoto: View {
     @State private var initialPosition: CGPoint = CGPoint.zero
     
     private var resizeGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
+        // Only allow resizing when in hand mode and selected
+        DragGesture(minimumDistance: (toolMode == .hand && isSelected) ? 2 : 1000)
             .onChanged { value in
-                let translation = value.translation
-                let newWidth = max(50, initialSize.width + translation.width)
-                let newHeight = max(50, initialSize.height + translation.height)
-                onResize(CGSize(width: newWidth, height: newHeight))
+                if toolMode == .hand && isSelected {
+                    let translation = value.translation
+                    let newWidth = max(50, initialSize.width + translation.width)
+                    let newHeight = max(50, initialSize.height + translation.height)
+                    onResize(CGSize(width: newWidth, height: newHeight))
+                }
             }
             .onEnded { _ in
-                initialSize = photoItem.size
+                if toolMode == .hand && isSelected {
+                    initialSize = photoItem.size
+                }
             }
     }
 }

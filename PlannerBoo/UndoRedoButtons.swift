@@ -44,6 +44,12 @@ struct UndoRedoButtons: View {
             Spacer()
         }
         .padding(.horizontal, 16)
+        .onAppear {
+            // Start a timer to periodically update undo/redo state
+            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                undoRedoManager.updateUndoRedoState()
+            }
+        }
     }
 }
 

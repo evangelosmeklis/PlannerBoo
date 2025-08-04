@@ -124,6 +124,20 @@ struct EventCreatorView: View {
                     
                     do {
                         try self.eventStore.save(event, span: .thisEvent)
+                        
+                        // Post notification to create widget
+                        NotificationCenter.default.post(
+                            name: .eventCreated,
+                            object: nil,
+                            userInfo: [
+                                "title": title,
+                                "startTime": date,
+                                "endTime": Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date,
+                                "isReminder": false,
+                                "date": self.date
+                            ]
+                        )
+                        
                         self.alertMessage = "Event created successfully in Calendar!"
                         self.showingAlert = true
                     } catch {
@@ -164,6 +178,20 @@ struct EventCreatorView: View {
                     
                     do {
                         try self.eventStore.save(reminder, commit: true)
+                        
+                        // Post notification to create widget
+                        NotificationCenter.default.post(
+                            name: .eventCreated,
+                            object: nil,
+                            userInfo: [
+                                "title": title,
+                                "startTime": date,
+                                "endTime": date,
+                                "isReminder": true,
+                                "date": self.date
+                            ]
+                        )
+                        
                         self.alertMessage = "Reminder created successfully!"
                         self.showingAlert = true
                     } catch {

@@ -30,6 +30,10 @@ struct TextInputOverlay: View {
                 .onTapGesture { location in
                     if toolMode == .text || toolMode == .stickyNote {
                         handleTap(at: location)
+                    } else if toolMode == .hand {
+                        // Deselect all objects when tapping empty space in hand mode
+                        selectedBox = nil
+                        selectedNote = nil
                     }
                 }
                 .allowsHitTesting(toolMode == .text || toolMode == .stickyNote || toolMode == .hand)
@@ -609,22 +613,53 @@ struct DraggableStickyNote: View {
     let onDelete: () -> Void
     
     var body: some View {
-        VStack(spacing: 4) {
-            Text(note.text)
-                .font(.custom("Georgia", size: 12))
-                .foregroundColor(.black)
-                .multilineTextAlignment(.leading)
-                .lineLimit(6)
-                .frame(maxWidth: 130, maxHeight: 120, alignment: .topLeading)
-                .padding(10)
+        ZStack {
+            VStack(spacing: 4) {
+                Text(note.text)
+                    .font(.custom("Georgia", size: 12))
+                    .foregroundColor(.black)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(6)
+                    .frame(maxWidth: 130, maxHeight: 120, alignment: .topLeading)
+                    .padding(10)
+            }
+            .frame(width: 150, height: 150)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(note.color.color.opacity(0.9))
+                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+                    .shadow(radius: 4)
+            )
+            
+            // Show resize handle when selected and in hand mode
+            if isSelected && toolMode == .hand {
+                VStack {
+                    HStack {
+                        Spacer()
+                        // Delete button
+                        Button(action: onDelete) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.title3)
+                                .background(Color.white.clipShape(Circle()))
+                        }
+                        .offset(x: 10, y: -10)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack {
+                        Spacer()
+                        // Resize handle (visual only for sticky notes)
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 16, height: 16)
+                            .offset(x: 10, y: 10)
+                    }
+                }
+                .frame(width: 150, height: 150)
+            }
         }
-        .frame(width: 150, height: 150)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(note.color.color.opacity(0.9))
-                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
-                .shadow(radius: 4)
-        )
         .position(note.position)
         .onTapGesture {
             if toolMode == .hand {
@@ -632,12 +667,12 @@ struct DraggableStickyNote: View {
             }
         }
         .gesture(
-            toolMode == .hand ? 
-            DragGesture()
+            DragGesture(minimumDistance: toolMode == .hand ? 5 : 1000)
                 .onChanged { value in
-                    onMove(value.location)
+                    if toolMode == .hand {
+                        onMove(value.location)
+                    }
                 }
-            : nil
         )
         .contextMenu {
             Button("Delete", role: .destructive) {
@@ -672,11 +707,12 @@ struct DraggableTextBox: View {
                 }
             }
             .gesture(
-                toolMode == .hand ? 
-                DragGesture()
+                DragGesture(minimumDistance: toolMode == .hand ? 5 : 1000)
                     .onChanged { value in
-                        onMove(value.location)
-                    } : nil
+                        if toolMode == .hand {
+                            onMove(value.location)
+                        }
+                    }
             )
             .contextMenu {
                 Button("Delete", role: .destructive) {

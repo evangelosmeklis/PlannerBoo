@@ -8,6 +8,7 @@ struct DrawingCanvasView: UIViewRepresentable {
     @Binding var eraserSize: CGFloat
     @Binding var toolMode: ToolMode
     let date: Date
+    let undoRedoManager: UndoRedoManager?
     
     func makeUIView(context: Context) -> PKCanvasView {
         // Configure for both pencil and finger input
@@ -21,6 +22,9 @@ struct DrawingCanvasView: UIViewRepresentable {
         
         // Set initial tool
         canvasView.tool = selectedTool
+        
+        // Connect to undo/redo manager
+        undoRedoManager?.setCanvasView(canvasView)
         
         // Load existing drawing for this date if available
         loadDrawing()
@@ -104,6 +108,9 @@ struct DrawingCanvasView: UIViewRepresentable {
         }
         
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+            // Update undo/redo state
+            parent.undoRedoManager?.updateUndoRedoState()
+            
             // Throttle save operations to prevent excessive I/O
             saveTimer?.invalidate()
             saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
@@ -139,6 +146,7 @@ struct DrawingCanvasView: UIViewRepresentable {
         showEraser: $showEraser,
         eraserSize: $eraserSize,
         toolMode: $toolMode,
-        date: Date()
+        date: Date(),
+        undoRedoManager: nil
     )
 }

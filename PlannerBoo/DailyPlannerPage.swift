@@ -172,14 +172,19 @@ struct DailyPlannerPage: View {
                                     DraggablePhotoOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
                                     
-                                    // Drawing canvas (middle layer) - can draw over photos
+                                    // Event widget overlay (second layer)
+                                    EventWidgetOverlay(date: date, toolMode: $toolMode)
+                                        .frame(height: max(800, geometry.size.height - 200))
+                                    
+                                    // Drawing canvas (middle layer) - can draw over photos and events
                                     DrawingCanvasView(
                                         canvasView: $canvasView,
                                         selectedTool: $selectedTool,
                                         showEraser: $showEraser,
                                         eraserSize: $eraserSize,
                                         toolMode: $toolMode,
-                                        date: date
+                                        date: date,
+                                        undoRedoManager: undoRedoManager
                                     )
                                     .frame(height: max(800, geometry.size.height - 200))
                                     .background(Color.clear)
@@ -191,10 +196,6 @@ struct DailyPlannerPage: View {
                                         .frame(height: max(800, geometry.size.height - 200))
                                         .padding(.horizontal, 60) // Exclude 60pt edges from text input
                                         .allowsHitTesting(toolMode == .text || toolMode == .stickyNote || toolMode == .hand)
-                                }
-                                .onAppear {
-                                    // Set up undo manager
-                                    undoRedoManager.setUndoManager(UndoManager())
                                 }
                                 .padding(.horizontal, 32)
                             }
