@@ -9,7 +9,7 @@ struct DrawingCanvasView: UIViewRepresentable {
     let date: Date
     
     func makeUIView(context: Context) -> PKCanvasView {
-        canvasView.drawingPolicy = .pencilOnly // Only Apple Pencil, not finger
+        canvasView.drawingPolicy = .anyInput // Allow both Apple Pencil and finger
         canvasView.backgroundColor = UIColor.clear // Make transparent to show lined paper
         canvasView.isOpaque = false
         
@@ -29,6 +29,9 @@ struct DrawingCanvasView: UIViewRepresentable {
         } else {
             uiView.tool = selectedTool
         }
+        
+        // Reload drawing when date changes
+        loadDrawing()
     }
     
     private func loadDrawing() {
@@ -39,6 +42,9 @@ struct DrawingCanvasView: UIViewRepresentable {
         if let drawingData = try? Data(contentsOf: drawingURL),
            let drawing = try? PKDrawing(data: drawingData) {
             canvasView.drawing = drawing
+        } else {
+            // Clear the canvas if no drawing exists for this date
+            canvasView.drawing = PKDrawing()
         }
     }
     

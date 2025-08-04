@@ -3,11 +3,13 @@ import SwiftUI
 struct PlannerPageView: View {
     @State private var currentDate = Date()
     @State private var selectedDate = Date()
+    @State private var generatedDates: [Date] = []
+    @State private var isInitialized = false
     
     var body: some View {
         ZStack {
             TabView(selection: $selectedDate) {
-                ForEach(generateDates(), id: \.self) { date in
+                ForEach(generatedDates, id: \.self) { date in
                     DailyPlannerPage(date: date, onDateSelected: { newDate in
                         selectedDate = normalizeDate(newDate)
                     })
@@ -16,10 +18,18 @@ struct PlannerPageView: View {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .onAppear {
-                selectedDate = normalizeDate(currentDate)
+                if !isInitialized {
+                    selectedDate = normalizeDate(currentDate)
+                    generatedDates = generateDates()
+                    isInitialized = true
+                }
             }
-            .onChange(of: selectedDate) {
-                print("Selected date changed to: \(selectedDate)")
+            .onChange(of: selectedDate) { newDate in
+                print("Selected date changed to: \(newDate)")
+                // Only check for regeneration if we're initialized and not currently regenerating
+                if isInitialized {
+                    checkAndRegenerateDates(for: newDate)
+                }
             }
             
             // Navigation hint overlay
@@ -45,17 +55,24 @@ struct PlannerPageView: View {
         let calendar = Calendar.current
         var dates: [Date] = []
         
-        // Use selectedDate as the base if it exists, otherwise use currentDate
-        let baseDate = calendar.startOfDay(for: selectedDate)
+        // Use currentDate as the base for initial generation
+        let baseDate = calendar.startOfDay(for: currentDate)
         
-        // Generate full year (365 days: 180 before, current, 184 after)
-        for i in -180...184 {
+        // Generate 3 years worth of dates (much larger buffer for smoother experience)
+        // 1.5 years before, current, 1.5 years after
+        for i in -547...547 {
             if let date = calendar.date(byAdding: .day, value: i, to: baseDate) {
                 dates.append(date)
             }
         }
         
         return dates
+    }
+    
+    private func checkAndRegenerateDates(for newDate: Date) {
+        // Completely disable regeneration to ensure smooth swiping
+        // The 3-year buffer should be more than enough for normal usage
+        return
     }
     
     private func normalizeDate(_ date: Date) -> Date {
