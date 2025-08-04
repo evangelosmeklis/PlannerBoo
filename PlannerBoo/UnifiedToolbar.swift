@@ -6,6 +6,7 @@ enum ToolMode {
     case eraser
     case text
     case stickyNote
+    case hand
 }
 
 struct UnifiedToolbar: View {
@@ -79,6 +80,19 @@ struct UnifiedToolbar: View {
                         .foregroundColor(toolMode == .stickyNote ? .white : .black)
                         .padding(10)
                         .background(toolMode == .stickyNote ? Color.blue : Color.black.opacity(0.1))
+                        .cornerRadius(8)
+                }
+                
+                // Hand tool for moving objects
+                Button(action: {
+                    toolMode = .hand
+                    showEraser = false
+                }) {
+                    Image(systemName: "hand.point.up")
+                        .font(.title2)
+                        .foregroundColor(toolMode == .hand ? .white : .black)
+                        .padding(10)
+                        .background(toolMode == .hand ? Color.blue : Color.black.opacity(0.1))
                         .cornerRadius(8)
                 }
                 
@@ -167,6 +181,13 @@ struct UnifiedToolbar: View {
                 
                 if toolMode == .stickyNote {
                     Text("Tap anywhere to add sticky note")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .italic()
+                }
+                
+                if toolMode == .hand {
+                    Text("Tap and drag to move objects")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .italic()

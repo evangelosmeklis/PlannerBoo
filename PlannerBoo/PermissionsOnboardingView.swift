@@ -54,11 +54,11 @@ struct PermissionsOnboardingView: View {
                     PermissionRow(
                         icon: "heart.fill",
                         title: "Health & Fitness",
-                        description: "Requires HealthKit entitlement in Xcode",
-                        isGranted: false,
-                        color: .gray,
+                        description: "Track steps and workouts in your planner",
+                        isGranted: permissionsManager.healthAccess,
+                        color: .red,
                         onTap: {
-                            // Show alert about entitlement requirement
+                            permissionsManager.requestIndividualPermission(for: .health)
                         }
                     )
                 }
@@ -111,10 +111,11 @@ struct PermissionsOnboardingView: View {
     }
     
     private func checkAllPermissions() {
-        // Auto-dismiss if user has granted main permissions (HealthKit requires entitlement)
+        // Auto-dismiss if user has granted all permissions
         if permissionsManager.photosAccess && 
            permissionsManager.calendarAccess && 
-           permissionsManager.remindersAccess {
+           permissionsManager.remindersAccess &&
+           permissionsManager.healthAccess {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 showOnboarding = false
             }

@@ -5,6 +5,7 @@ struct DraggablePhotoOverlay: View {
     @State private var photoItems: [PhotoItem] = []
     @State private var selectedPhotoId: UUID?
     let date: Date
+    @Binding var toolMode: ToolMode
     
     var body: some View {
         ZStack {
@@ -22,8 +23,11 @@ struct DraggablePhotoOverlay: View {
                 DraggablePhoto(
                     photoItem: item,
                     isSelected: selectedPhotoId == item.id,
+                    toolMode: toolMode,
                     onSelect: {
-                        selectedPhotoId = selectedPhotoId == item.id ? nil : item.id
+                        if toolMode == .hand {
+                            selectedPhotoId = selectedPhotoId == item.id ? nil : item.id
+                        }
                     },
                     onMove: { newPosition in
                         updatePhotoPosition(id: item.id, position: newPosition)
@@ -182,6 +186,7 @@ struct PhotoMetadata: Codable {
 struct DraggablePhoto: View {
     let photoItem: PhotoItem
     let isSelected: Bool
+    let toolMode: ToolMode
     let onSelect: () -> Void
     let onMove: (CGPoint) -> Void
     let onResize: (CGSize) -> Void
@@ -238,28 +243,28 @@ struct DraggablePhoto: View {
             .position(photoItem.position)
             .contentShape(RoundedRectangle(cornerRadius: 8)) // Only respond to hits within the image bounds
             .onTapGesture { 
-                onSelect()
-                initialSize = photoItem.size
-                initialPosition = photoItem.position
+                if toolMode == .hand {
+                    onSelect()
+                    initialSize = photoItem.size
+                    initialPosition = photoItem.position
+                }
             }
             .gesture(
-                // Only allow dragging when selected
-                DragGesture(minimumDistance: isSelected ? 5 : 1000)
+                // Only allow dragging when in hand mode and selected
+                (toolMode == .hand && isSelected) ? 
+                DragGesture(minimumDistance: 5)
                     .onChanged { value in
-                        if isSelected {
-                            let translation = value.translation
-                            let newPosition = CGPoint(
-                                x: initialPosition.x + translation.width,
-                                y: initialPosition.y + translation.height
-                            )
-                            onMove(newPosition)
-                        }
+                        let translation = value.translation
+                        let newPosition = CGPoint(
+                            x: initialPosition.x + translation.width,
+                            y: initialPosition.y + translation.height
+                        )
+                        onMove(newPosition)
                     }
                     .onEnded { _ in
-                        if isSelected {
-                            initialPosition = photoItem.position
-                        }
+                        initialPosition = photoItem.position
                     }
+                : nil
             )
             .contextMenu {
                 Button("Delete", role: .destructive) { 
@@ -296,7 +301,9 @@ extension Notification.Name {
 }
 
 #Preview {
-    DraggablePhotoOverlay(date: Date())
+    @Previewable @State var toolMode: ToolMode = .hand
+    
+    DraggablePhotoOverlay(date: Date(), toolMode: $toolMode)
         .frame(width: 400, height: 600)
         .background(Color.gray.opacity(0.1))
 }

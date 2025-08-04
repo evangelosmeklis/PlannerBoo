@@ -13,6 +13,7 @@ struct DailyPlannerPage: View {
     @State private var showDrawingToolbar = true
     @State private var eraserSize: CGFloat = 40
     @State private var toolMode: ToolMode = .pen
+    @StateObject private var undoRedoManager = UndoRedoManager()
     @EnvironmentObject var permissionsManager: PermissionsManager
     
     private var dateFormatter: DateFormatter {
@@ -130,12 +131,17 @@ struct DailyPlannerPage: View {
                                 
                                 // Unified toolbar positioned right below action buttons
                                 if showDrawingToolbar {
-                                    UnifiedToolbar(
-                                        selectedTool: $selectedTool,
-                                        showEraser: $showEraser,
-                                        eraserSize: $eraserSize,
-                                        toolMode: $toolMode
-                                    )
+                                    VStack(spacing: 8) {
+                                        UnifiedToolbar(
+                                            selectedTool: $selectedTool,
+                                            showEraser: $showEraser,
+                                            eraserSize: $eraserSize,
+                                            toolMode: $toolMode
+                                        )
+                                        
+                                        // Undo/Redo buttons
+                                        UndoRedoButtons(undoRedoManager: undoRedoManager)
+                                    }
                                     .padding(.top, 12)
                                 }
                             }
@@ -163,7 +169,7 @@ struct DailyPlannerPage: View {
                                 // Main writing/drawing area with overlays
                                 ZStack {
                                     // Photo overlay (bottom layer)
-                                    DraggablePhotoOverlay(date: date)
+                                    DraggablePhotoOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
                                     
                                     // Drawing canvas (middle layer) - can draw over photos
@@ -184,7 +190,11 @@ struct DailyPlannerPage: View {
                                     TextInputOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
                                         .padding(.horizontal, 60) // Exclude 60pt edges from text input
-                                        .allowsHitTesting(toolMode == .text || toolMode == .stickyNote)
+                                        .allowsHitTesting(toolMode == .text || toolMode == .stickyNote || toolMode == .hand)
+                                }
+                                .onAppear {
+                                    // Set up undo manager
+                                    undoRedoManager.setUndoManager(UndoManager())
                                 }
                                 .padding(.horizontal, 32)
                             }

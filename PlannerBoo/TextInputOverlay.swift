@@ -24,20 +24,22 @@ struct TextInputOverlay: View {
     
     var body: some View {
         ZStack {
-            // Tap area that only responds when in text or sticky note mode
-            if toolMode == .text || toolMode == .stickyNote {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
+            // Tap area that responds based on tool mode
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { location in
+                    if toolMode == .text || toolMode == .stickyNote {
                         handleTap(at: location)
                     }
-            }
+                }
+                .allowsHitTesting(toolMode == .text || toolMode == .stickyNote || toolMode == .hand)
             
             // Existing text boxes
             ForEach(textBoxes) { textBox in
                 DraggableTextBox(
                     textBox: textBox,
                     isSelected: selectedBox == textBox.id,
+                    toolMode: toolMode,
                     onTap: { 
                         selectedBox = textBox.id
                         selectedNote = nil
@@ -56,6 +58,7 @@ struct TextInputOverlay: View {
                 DraggableStickyNote(
                     note: note,
                     isSelected: selectedNote == note.id,
+                    toolMode: toolMode,
                     onTap: {
                         selectedNote = note.id
                         selectedBox = nil
@@ -600,6 +603,7 @@ struct TextBox: Identifiable, Codable {
 struct DraggableStickyNote: View {
     let note: StickyNote
     let isSelected: Bool
+    let toolMode: ToolMode
     let onTap: () -> Void
     let onMove: (CGPoint) -> Void
     let onDelete: () -> Void
@@ -623,13 +627,17 @@ struct DraggableStickyNote: View {
         )
         .position(note.position)
         .onTapGesture {
-            onTap()
+            if toolMode == .hand {
+                onTap()
+            }
         }
         .gesture(
+            toolMode == .hand ? 
             DragGesture()
                 .onChanged { value in
                     onMove(value.location)
                 }
+            : nil
         )
         .contextMenu {
             Button("Delete", role: .destructive) {
@@ -642,6 +650,7 @@ struct DraggableStickyNote: View {
 struct DraggableTextBox: View {
     let textBox: TextBox
     let isSelected: Bool
+    let toolMode: ToolMode
     let onTap: () -> Void
     let onMove: (CGPoint) -> Void
     let onDelete: () -> Void
@@ -658,13 +667,16 @@ struct DraggableTextBox: View {
             )
             .position(textBox.position)
             .onTapGesture {
-                onTap()
+                if toolMode == .hand {
+                    onTap()
+                }
             }
             .gesture(
+                toolMode == .hand ? 
                 DragGesture()
                     .onChanged { value in
                         onMove(value.location)
-                    }
+                    } : nil
             )
             .contextMenu {
                 Button("Delete", role: .destructive) {
@@ -675,7 +687,7 @@ struct DraggableTextBox: View {
 }
 
 #Preview {
-    @Previewable @State var toolMode: ToolMode = .text
+    @Previewable @State var toolMode: ToolMode = .hand
     
     TextInputOverlay(date: Date(), toolMode: $toolMode)
         .frame(width: 400, height: 600)

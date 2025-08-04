@@ -171,13 +171,6 @@ class PermissionsManager: ObservableObject {
     }
     
     func requestHealthAccess() async {
-        print("HealthKit temporarily disabled - entitlement required")
-        await MainActor.run {
-            healthAccess = false
-        }
-        return
-        
-        /*
         print("Requesting health access...")
         guard HKHealthStore.isHealthDataAvailable() else { 
             print("Health data not available on this device")
@@ -210,7 +203,6 @@ class PermissionsManager: ObservableObject {
                 healthAccess = false
             }
         }
-        */
     }
     
     // MARK: - Photos Permissions
