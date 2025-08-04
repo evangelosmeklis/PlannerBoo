@@ -6,7 +6,7 @@ struct OverviewView: View {
     @Environment(\.presentationMode) var presentationMode
     let onDateSelected: ((Date) -> Void)?
     
-    private let segments = ["Week", "Month", "Year"]
+    private let segments = ["Week", "Month"]
     
     var body: some View {
         NavigationView {
@@ -24,10 +24,8 @@ struct OverviewView: View {
                 Group {
                     if selectedSegment == 0 {
                         WeekOverviewView(selectedDate: $selectedDate, onDateSelected: onDateSelected)
-                    } else if selectedSegment == 1 {
-                        MonthOverviewView(selectedDate: $selectedDate, onDateSelected: onDateSelected)
                     } else {
-                        YearOverviewView(selectedDate: $selectedDate, onDateSelected: onDateSelected)
+                        MonthOverviewView(selectedDate: $selectedDate, onDateSelected: onDateSelected)
                     }
                 }
                 
@@ -70,7 +68,7 @@ struct WeekOverviewView: View {
     
     private var weekDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "MMMM"
         return formatter
     }
     
@@ -208,7 +206,7 @@ struct MonthOverviewView: View {
     
     private var monthDateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "MMMM"
         return formatter
     }
     

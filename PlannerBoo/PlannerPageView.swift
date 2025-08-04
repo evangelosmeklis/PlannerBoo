@@ -14,9 +14,11 @@ struct PlannerPageView: View {
                         selectedDate = normalizeDate(newDate)
                     })
                     .tag(date)
+                    .clipped() // Improve performance by clipping content
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .animation(.easeInOut(duration: 0.2), value: selectedDate) // Faster animation
             .onAppear {
                 if !isInitialized {
                     selectedDate = normalizeDate(currentDate)
@@ -25,7 +27,6 @@ struct PlannerPageView: View {
                 }
             }
             .onChange(of: selectedDate) { newDate in
-                print("Selected date changed to: \(newDate)")
                 // Only check for regeneration if we're initialized and not currently regenerating
                 if isInitialized {
                     checkAndRegenerateDates(for: newDate)
@@ -66,9 +67,9 @@ struct PlannerPageView: View {
         // Use currentDate as the base for initial generation
         let baseDate = calendar.startOfDay(for: currentDate)
         
-        // Generate 3 years worth of dates (much larger buffer for smoother experience)
-        // 1.5 years before, current, 1.5 years after
-        for i in -547...547 {
+        // Generate only 2 weeks worth of dates for better performance
+        // 1 week before, current, 1 week after
+        for i in -7...7 {
             if let date = calendar.date(byAdding: .day, value: i, to: baseDate) {
                 dates.append(date)
             }
@@ -78,9 +79,28 @@ struct PlannerPageView: View {
     }
     
     private func checkAndRegenerateDates(for newDate: Date) {
-        // Completely disable regeneration to ensure smooth swiping
-        // The 3-year buffer should be more than enough for normal usage
-        return
+        let calendar = Calendar.current
+        
+        // Check if we're getting close to the edges and need to regenerate
+        guard let firstDate = generatedDates.first,
+              let lastDate = generatedDates.last else { return }
+        
+        let daysBetweenNewAndFirst = calendar.dateComponents([.day], from: firstDate, to: newDate).day ?? 0
+        let daysBetweenNewAndLast = calendar.dateComponents([.day], from: newDate, to: lastDate).day ?? 0
+        
+        // If we're within 2 days of either edge, regenerate around the new date
+        if daysBetweenNewAndFirst <= 2 || daysBetweenNewAndLast <= 2 {
+            let baseDate = calendar.startOfDay(for: newDate)
+            var newDates: [Date] = []
+            
+            for i in -7...7 {
+                if let date = calendar.date(byAdding: .day, value: i, to: baseDate) {
+                    newDates.append(date)
+                }
+            }
+            
+            generatedDates = newDates
+        }
     }
     
     private func normalizeDate(_ date: Date) -> Date {

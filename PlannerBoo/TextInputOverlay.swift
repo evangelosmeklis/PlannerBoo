@@ -165,6 +165,9 @@ struct TextInputOverlay: View {
                             .onTapGesture {
                                 // Prevent the tap from propagating to the background
                             }
+                            .keyboardType(.default)
+                            .autocorrectionDisabled(false)
+                            .frame(minHeight: 30)
                         Spacer()
                     }
                     Spacer()
@@ -185,6 +188,8 @@ struct TextInputOverlay: View {
                         .onSubmit {
                             finishStickyNoteEditing()
                         }
+                        .keyboardType(.default)
+                        .autocorrectionDisabled(false)
                     
                     // Color picker for sticky notes
                     HStack(spacing: 4) {

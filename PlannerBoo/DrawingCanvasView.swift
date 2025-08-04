@@ -7,18 +7,22 @@ struct DrawingCanvasView: UIViewRepresentable {
     @Binding var showEraser: Bool
     @Binding var eraserSize: CGFloat
     let date: Date
-    @State private var currentLoadedDate: Date?
     
     func makeUIView(context: Context) -> PKCanvasView {
-        canvasView.drawingPolicy = .anyInput // Allow both Apple Pencil and finger
-        canvasView.backgroundColor = UIColor.clear // Make transparent to show lined paper
+        // Configure for Apple Pencil only to ensure proper detection
+        canvasView.drawingPolicy = .pencilOnly
+        canvasView.backgroundColor = UIColor.clear
         canvasView.isOpaque = false
+        canvasView.delegate = context.coordinator
+        
+        // Disable finger drawing to force pencil detection
+        canvasView.allowsFingerDrawing = false
+        canvasView.isMultipleTouchEnabled = false
         
         // Set initial tool
         canvasView.tool = selectedTool
         
         // Load existing drawing for this date if available
-        currentLoadedDate = date
         loadDrawing()
         
         return canvasView
@@ -32,36 +36,36 @@ struct DrawingCanvasView: UIViewRepresentable {
             uiView.tool = selectedTool
         }
         
-        // Only reload drawing if the date has actually changed
-        if currentLoadedDate != date {
-            // Save current drawing before switching
-            if let oldDate = currentLoadedDate {
-                saveDrawingForDate(oldDate)
-            }
-            currentLoadedDate = date
-            loadDrawing()
-        }
+        // Handle date changes through coordinator to avoid state modification during view update
+        context.coordinator.updateForDateChange()
     }
     
-    private func loadDrawing() {
+    func loadDrawing() {
         // Load saved drawing for this specific date
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let drawingURL = documentsPath.appendingPathComponent("drawing_\(dateKey).drawing")
         
-        if let drawingData = try? Data(contentsOf: drawingURL),
-           let drawing = try? PKDrawing(data: drawingData) {
-            canvasView.drawing = drawing
-        } else {
-            // Clear the canvas if no drawing exists for this date
-            canvasView.drawing = PKDrawing()
+        // Use background queue for file I/O to prevent main thread blocking
+        DispatchQueue.global(qos: .userInitiated).async {
+            if let drawingData = try? Data(contentsOf: drawingURL),
+               let drawing = try? PKDrawing(data: drawingData) {
+                DispatchQueue.main.async {
+                    self.canvasView.drawing = drawing
+                }
+            } else {
+                DispatchQueue.main.async {
+                    // Clear the canvas if no drawing exists for this date
+                    self.canvasView.drawing = PKDrawing()
+                }
+            }
         }
     }
     
-    private func saveDrawing() {
+    func saveDrawing() {
         saveDrawingForDate(date)
     }
     
-    private func saveDrawingForDate(_ saveDate: Date) {
+    func saveDrawingForDate(_ saveDate: Date) {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -69,7 +73,11 @@ struct DrawingCanvasView: UIViewRepresentable {
         let drawingURL = documentsPath.appendingPathComponent("drawing_\(dateKey).drawing")
         
         let drawingData = canvasView.drawing.dataRepresentation()
-        try? drawingData.write(to: drawingURL)
+        
+        // Use background queue for file I/O to prevent main thread blocking
+        DispatchQueue.global(qos: .utility).async {
+            try? drawingData.write(to: drawingURL)
+        }
     }
     
     private var dateKey: String {
@@ -84,15 +92,33 @@ struct DrawingCanvasView: UIViewRepresentable {
     
     class Coordinator: NSObject, PKCanvasViewDelegate {
         let parent: DrawingCanvasView
+        private var lastLoadedDate: Date?
+        private var saveTimer: Timer?
         
         init(_ parent: DrawingCanvasView) {
             self.parent = parent
             super.init()
-            parent.canvasView.delegate = self
         }
         
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            parent.saveDrawing()
+            // Throttle save operations to prevent excessive I/O
+            saveTimer?.invalidate()
+            saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+                self.parent.saveDrawing()
+            }
+        }
+        
+        func updateForDateChange() {
+            if lastLoadedDate != parent.date {
+                // Save current drawing before switching
+                saveTimer?.invalidate()
+                if let oldDate = lastLoadedDate {
+                    parent.saveDrawingForDate(oldDate)
+                }
+                
+                lastLoadedDate = parent.date
+                parent.loadDrawing()
+            }
         }
     }
 }
