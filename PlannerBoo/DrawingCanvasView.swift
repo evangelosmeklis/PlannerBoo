@@ -7,6 +7,7 @@ struct DrawingCanvasView: UIViewRepresentable {
     @Binding var showEraser: Bool
     @Binding var eraserSize: CGFloat
     let date: Date
+    @State private var currentLoadedDate: Date?
     
     func makeUIView(context: Context) -> PKCanvasView {
         canvasView.drawingPolicy = .anyInput // Allow both Apple Pencil and finger
@@ -17,6 +18,7 @@ struct DrawingCanvasView: UIViewRepresentable {
         canvasView.tool = selectedTool
         
         // Load existing drawing for this date if available
+        currentLoadedDate = date
         loadDrawing()
         
         return canvasView
@@ -30,8 +32,15 @@ struct DrawingCanvasView: UIViewRepresentable {
             uiView.tool = selectedTool
         }
         
-        // Reload drawing when date changes
-        loadDrawing()
+        // Only reload drawing if the date has actually changed
+        if currentLoadedDate != date {
+            // Save current drawing before switching
+            if let oldDate = currentLoadedDate {
+                saveDrawingForDate(oldDate)
+            }
+            currentLoadedDate = date
+            loadDrawing()
+        }
     }
     
     private func loadDrawing() {
@@ -49,7 +58,14 @@ struct DrawingCanvasView: UIViewRepresentable {
     }
     
     private func saveDrawing() {
+        saveDrawingForDate(date)
+    }
+    
+    private func saveDrawingForDate(_ saveDate: Date) {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateKey = formatter.string(from: saveDate)
         let drawingURL = documentsPath.appendingPathComponent("drawing_\(dateKey).drawing")
         
         let drawingData = canvasView.drawing.dataRepresentation()

@@ -13,6 +13,9 @@ struct TextInputOverlay: View {
     @State private var showingStickyNoteEditor = false
     @State private var stickyNotePosition: CGPoint = .zero
     @State private var newStickyText = ""
+    @State private var selectedStickyColor: StickyNoteColor = .yellow
+    @State private var showingTextResizer = false
+    @State private var resizingTextId: UUID?
     @FocusState private var isTextFieldFocused: Bool
     @FocusState private var isStickyNoteFocused: Bool
     
@@ -100,19 +103,34 @@ struct TextInputOverlay: View {
                 )
             }
             
-            // Delete button for selected text
+            // Control buttons for selected text
             if let selectedBoxId = selectedBox,
                let selectedTextBox = textBoxes.first(where: { $0.id == selectedBoxId }) {
-                Button(action: {
-                    deleteTextBox(id: selectedBoxId)
-                }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Color.red)
-                        .clipShape(Circle())
+                HStack(spacing: 8) {
+                    // Resize button
+                    Button(action: {
+                        resizingTextId = selectedBoxId
+                        showingTextResizer = true
+                    }) {
+                        Image(systemName: "textformat.size")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                    }
+                    
+                    // Delete button
+                    Button(action: {
+                        deleteTextBox(id: selectedBoxId)
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.red)
+                            .clipShape(Circle())
+                    }
                 }
-                .position(x: selectedTextBox.position.x + 60, y: selectedTextBox.position.y - 30)
+                .position(x: selectedTextBox.position.x + 80, y: selectedTextBox.position.y - 30)
             }
             
             // Delete button for selected sticky note
@@ -132,21 +150,27 @@ struct TextInputOverlay: View {
             
             // Inline text editor that appears where you tap
             if showingInlineEditor {
-                TextField("", text: $newText)
-                    .font(.custom("Georgia", size: 16))
-                    .foregroundColor(.black)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .multilineTextAlignment(.leading)
-                    .frame(minWidth: 20, maxWidth: 300)
-                    .background(Color.clear)
-                    .position(inlineEditorPosition)
-                    .focused($isTextFieldFocused)
-                    .onSubmit {
-                        finishInlineEditing()
+                VStack {
+                    HStack {
+                        TextField("", text: $newText)
+                            .font(.custom("Georgia", size: 16))
+                            .foregroundColor(.black)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .multilineTextAlignment(.leading)
+                            .background(Color.clear)
+                            .focused($isTextFieldFocused)
+                            .onSubmit {
+                                finishInlineEditing()
+                            }
+                            .onTapGesture {
+                                // Prevent the tap from propagating to the background
+                            }
+                        Spacer()
                     }
-                    .onTapGesture {
-                        // Prevent the tap from propagating to the background
-                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .offset(x: inlineEditorPosition.x, y: inlineEditorPosition.y)
             }
             
             // Sticky note editor
@@ -161,6 +185,24 @@ struct TextInputOverlay: View {
                         .onSubmit {
                             finishStickyNoteEditing()
                         }
+                    
+                    // Color picker for sticky notes
+                    HStack(spacing: 4) {
+                        ForEach(StickyNoteColor.allCases, id: \.self) { color in
+                            Button(action: {
+                                selectedStickyColor = color
+                            }) {
+                                Circle()
+                                    .fill(color.color)
+                                    .frame(width: 20, height: 20)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(selectedStickyColor == color ? Color.black : Color.clear, lineWidth: 2)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
                     
                     HStack {
                         Button("Cancel") {
@@ -180,13 +222,59 @@ struct TextInputOverlay: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 8)
                 }
-                .frame(width: 150, height: 150)
+                .frame(width: 150, height: 180)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.yellow.opacity(0.9))
+                        .fill(selectedStickyColor.color.opacity(0.9))
                         .shadow(radius: 4)
                 )
                 .position(stickyNotePosition)
+                .onTapGesture {
+                    // Prevent the tap from propagating to the background
+                }
+            }
+            
+            // Text resizer overlay
+            if showingTextResizer, let resizingId = resizingTextId,
+               let textBox = textBoxes.first(where: { $0.id == resizingId }) {
+                VStack(spacing: 12) {
+                    Text("Text Size")
+                        .font(.headline)
+                        .foregroundColor(.black)
+                    
+                    HStack(spacing: 16) {
+                        ForEach([12, 16, 20, 24, 32], id: \.self) { size in
+                            Button(action: {
+                                updateTextSize(id: resizingId, size: CGFloat(size))
+                                showingTextResizer = false
+                                resizingTextId = nil
+                            }) {
+                                Text("Aa")
+                                    .font(.custom("Georgia", size: CGFloat(size)))
+                                    .foregroundColor(.black)
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(textBox.fontSize == CGFloat(size) ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2))
+                                    )
+                            }
+                        }
+                    }
+                    
+                    Button("Done") {
+                        showingTextResizer = false
+                        resizingTextId = nil
+                    }
+                    .foregroundColor(.blue)
+                    .fontWeight(.semibold)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white)
+                        .shadow(radius: 8)
+                )
+                .position(x: textBox.position.x, y: textBox.position.y - 100)
                 .onTapGesture {
                     // Prevent the tap from propagating to the background
                 }
@@ -197,19 +285,45 @@ struct TextInputOverlay: View {
             loadStickyNotes()
         }
         .onChange(of: date) { _ in
-            // Reset all editor states when date changes
+            // Save any current text before switching dates
+            if showingInlineEditor && !newText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let newBox = TextBox(
+                    text: newText,
+                    position: inlineEditorPosition,
+                    fontSize: 16
+                )
+                textBoxes.append(newBox)
+                saveTextBoxes()
+            }
+            
+            if showingStickyNoteEditor && !newStickyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let newNote = StickyNote(
+                    text: newStickyText,
+                    position: stickyNotePosition,
+                    color: selectedStickyColor
+                )
+                stickyNotes.append(newNote)
+                saveStickyNotes()
+            }
+            
+            // Reset editor states for new date
             showingInlineEditor = false
             showingStickyNoteEditor = false
+            showingTextResizer = false
             isTextFieldFocused = false
             isStickyNoteFocused = false
             newText = ""
             newStickyText = ""
             selectedBox = nil
             selectedNote = nil
+            resizingTextId = nil
+            selectedStickyColor = .yellow
             
-            // Reload content for the new date
-            loadTextBoxes()
-            loadStickyNotes()
+            // Load content for the new date
+            DispatchQueue.main.async {
+                loadTextBoxes()
+                loadStickyNotes()
+            }
         }
 
     }
@@ -250,7 +364,7 @@ struct TextInputOverlay: View {
             let newNote = StickyNote(
                 text: newStickyText,
                 position: stickyNotePosition,
-                color: .yellow
+                color: selectedStickyColor
             )
             stickyNotes.append(newNote)
             saveStickyNotes()
@@ -259,12 +373,21 @@ struct TextInputOverlay: View {
         newStickyText = ""
         showingStickyNoteEditor = false
         isStickyNoteFocused = false
+        selectedStickyColor = .yellow
     }
     
     private func cancelStickyNoteEditing() {
         newStickyText = ""
         showingStickyNoteEditor = false
         isStickyNoteFocused = false
+        selectedStickyColor = .yellow
+    }
+    
+    private func updateTextSize(id: UUID, size: CGFloat) {
+        if let index = textBoxes.firstIndex(where: { $0.id == id }) {
+            textBoxes[index].fontSize = size
+            saveTextBoxes()
+        }
     }
     
     private func updateTextBoxPosition(id: UUID, position: CGPoint) {
@@ -342,17 +465,35 @@ struct TextInputOverlay: View {
     }
 }
 
+enum StickyNoteColor: String, CaseIterable, Codable {
+    case yellow = "yellow"
+    case pink = "pink"
+    case blue = "blue"
+    case green = "green"
+    case orange = "orange"
+    
+    var color: Color {
+        switch self {
+        case .yellow: return .yellow
+        case .pink: return .pink
+        case .blue: return Color(red: 0.7, green: 0.9, blue: 1.0)
+        case .green: return Color(red: 0.7, green: 1.0, blue: 0.7)
+        case .orange: return .orange
+        }
+    }
+}
+
 struct StickyNote: Identifiable, Codable {
     let id = UUID()
     var text: String
     var position: CGPoint
-    var color: Color
+    var color: StickyNoteColor
     
     enum CodingKeys: String, CodingKey {
         case text, position, color
     }
     
-    init(text: String, position: CGPoint, color: Color) {
+    init(text: String, position: CGPoint, color: StickyNoteColor) {
         self.text = text
         self.position = position
         self.color = color
@@ -368,8 +509,13 @@ struct StickyNote: Identifiable, Codable {
         let y = try positionContainer.decode(CGFloat.self, forKey: .y)
         position = CGPoint(x: x, y: y)
         
-        // For now, always use yellow - could extend this later
-        color = .yellow
+        // Try to decode color, default to yellow if not found
+        if let colorString = try? container.decode(String.self, forKey: .color),
+           let stickyColor = StickyNoteColor(rawValue: colorString) {
+            color = stickyColor
+        } else {
+            color = .yellow
+        }
     }
     
     func encode(to encoder: Encoder) throws {
@@ -381,8 +527,8 @@ struct StickyNote: Identifiable, Codable {
         try positionContainer.encode(position.x, forKey: .x)
         try positionContainer.encode(position.y, forKey: .y)
         
-        // Color encoding - simplified for now
-        try container.encode("yellow", forKey: .color)
+        // Encode color
+        try container.encode(color.rawValue, forKey: .color)
     }
     
     private enum PositionKeys: String, CodingKey {
@@ -454,7 +600,7 @@ struct DraggableStickyNote: View {
         .frame(width: 150, height: 150)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(note.color.opacity(0.9))
+                .fill(note.color.color.opacity(0.9))
                 .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
                 .shadow(radius: 4)
         )
