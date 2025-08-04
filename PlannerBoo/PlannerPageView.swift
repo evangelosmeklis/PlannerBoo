@@ -18,11 +18,7 @@ struct PlannerPageView: View {
                 selectedDate = normalizeDate(currentDate)
             }
             .onChange(of: selectedDate) {
-                // Ensure the selected date is normalized and exists in our date range
-                let normalized = normalizeDate(selectedDate)
-                if selectedDate != normalized {
-                    selectedDate = normalized
-                }
+                print("Selected date changed to: \(selectedDate)")
             }
             
             // Date navigation overlay
@@ -72,8 +68,8 @@ struct PlannerPageView: View {
         let calendar = Calendar.current
         var dates: [Date] = []
         
-        // Normalize current date to start of day
-        let baseDate = calendar.startOfDay(for: currentDate)
+        // Use selectedDate as the base if it exists, otherwise use currentDate
+        let baseDate = calendar.startOfDay(for: selectedDate)
         
         // Generate full year (365 days: 180 before, current, 184 after)
         for i in -180...184 {

@@ -3,12 +3,18 @@ import PencilKit
 
 struct DrawingCanvasView: UIViewRepresentable {
     @Binding var canvasView: PKCanvasView
+    @Binding var selectedTool: PKInkingTool
+    @Binding var showEraser: Bool
+    @Binding var eraserSize: CGFloat
     let date: Date
     
     func makeUIView(context: Context) -> PKCanvasView {
         canvasView.drawingPolicy = .pencilOnly // Only Apple Pencil, not finger
         canvasView.backgroundColor = UIColor.clear // Make transparent to show lined paper
         canvasView.isOpaque = false
+        
+        // Set initial tool
+        canvasView.tool = selectedTool
         
         // Load existing drawing for this date if available
         loadDrawing()
@@ -17,7 +23,12 @@ struct DrawingCanvasView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: PKCanvasView, context: Context) {
-        // Update the canvas if needed
+        // Update tool when selection changes
+        if showEraser {
+            uiView.tool = PKEraserTool(.bitmap, width: eraserSize)
+        } else {
+            uiView.tool = selectedTool
+        }
     }
     
     private func loadDrawing() {
@@ -66,5 +77,15 @@ struct DrawingCanvasView: UIViewRepresentable {
 
 #Preview {
     @Previewable @State var canvasView = PKCanvasView()
-    return DrawingCanvasView(canvasView: $canvasView, date: Date())
+    @Previewable @State var selectedTool = PKInkingTool(.pen, color: .black, width: 5)
+    @Previewable @State var showEraser = false
+    @Previewable @State var eraserSize: CGFloat = 20
+    
+    DrawingCanvasView(
+        canvasView: $canvasView,
+        selectedTool: $selectedTool,
+        showEraser: $showEraser,
+        eraserSize: $eraserSize,
+        date: Date()
+    )
 }

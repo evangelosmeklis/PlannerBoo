@@ -6,6 +6,11 @@ struct DailyPlannerPage: View {
     @State private var canvasView = PKCanvasView()
     @State private var showingPhotoPicker = false
     @State private var showingEventCreator = false
+    @State private var showingOverview = false
+    @State private var selectedTool = PKInkingTool(.pen, color: .black, width: 5)
+    @State private var showEraser = false
+    @State private var showDrawingToolbar = true
+    @State private var eraserSize: CGFloat = 20
     @EnvironmentObject var permissionsManager: PermissionsManager
     
     private var dateFormatter: DateFormatter {
@@ -90,8 +95,46 @@ struct DailyPlannerPage: View {
                                         .cornerRadius(4)
                                     }
                                     .foregroundColor(.black)
+                                    
+                                    Button(action: { showingOverview = true }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "calendar.badge.clock")
+                                                .font(.caption)
+                                            Text("Overview")
+                                                .font(.caption)
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.black.opacity(0.05))
+                                        .cornerRadius(4)
+                                    }
+                                    .foregroundColor(.black)
+                                    
+                                    Button(action: { showDrawingToolbar.toggle() }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: showDrawingToolbar ? "paintbrush.fill" : "paintbrush")
+                                                .font(.caption)
+                                            Text("Tools")
+                                                .font(.caption)
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.black.opacity(0.05))
+                                        .cornerRadius(4)
+                                    }
+                                    .foregroundColor(.black)
                                 }
                                 .padding(.top, 8)
+                                
+                                // Drawing toolbar positioned right below action buttons
+                                if showDrawingToolbar {
+                                    DrawingToolbar(
+                                        selectedTool: $selectedTool,
+                                        showEraser: $showEraser,
+                                        eraserSize: $eraserSize
+                                    )
+                                    .padding(.top, 12)
+                                }
                             }
                             
                             Spacer()
@@ -128,11 +171,29 @@ struct DailyPlannerPage: View {
                                     .padding(.top, 16)
                                 }
                                 
-                                // Main writing/drawing area - transparent background
-                                DrawingCanvasView(canvasView: $canvasView, date: date)
-                                    .frame(height: max(800, geometry.size.height - 150))
-                                    .padding(.horizontal, 32)
-                                    .background(Color.clear) // Make transparent
+                                
+                                // Main writing/drawing area with overlays
+                                ZStack {
+                                    // Drawing canvas
+                                    DrawingCanvasView(
+                                        canvasView: $canvasView,
+                                        selectedTool: $selectedTool,
+                                        showEraser: $showEraser,
+                                        eraserSize: $eraserSize,
+                                        date: date
+                                    )
+                                    .frame(height: max(800, geometry.size.height - 200))
+                                    .background(Color.clear)
+                                    
+                                    // Photo overlay (behind text)
+                                    DraggablePhotoOverlay(date: date)
+                                        .frame(height: max(800, geometry.size.height - 200))
+                                    
+                                    // Text input overlay (on top)
+                                    TextInputOverlay(date: date)
+                                        .frame(height: max(800, geometry.size.height - 200))
+                                }
+                                .padding(.horizontal, 32)
                             }
                         }
                     }
@@ -144,6 +205,9 @@ struct DailyPlannerPage: View {
         }
         .sheet(isPresented: $showingEventCreator) {
             EventCreatorView(date: date)
+        }
+        .sheet(isPresented: $showingOverview) {
+            OverviewView()
         }
     }
 }

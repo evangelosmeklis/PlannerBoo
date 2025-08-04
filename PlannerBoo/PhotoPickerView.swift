@@ -91,19 +91,16 @@ struct PhotoPickerView: View {
     }
     
     private func savePhotosToPlanner() {
-        // Save selected photos for the specific date
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let photosDirectory = documentsPath.appendingPathComponent("photos")
-        
-        try? FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
-        
-        for (index, image) in selectedImages.enumerated() {
-            if let imageData = image.jpegData(compressionQuality: 0.8) {
-                let filename = "photo_\(dateKey)_\(index).jpg"
-                let fileURL = photosDirectory.appendingPathComponent(filename)
-                try? imageData.write(to: fileURL)
-            }
+        // Send notification for each selected image to add to the overlay
+        for image in selectedImages {
+            NotificationCenter.default.post(
+                name: .photoAdded,
+                object: nil,
+                userInfo: ["image": image, "date": date]
+            )
         }
+        
+        presentationMode.wrappedValue.dismiss()
     }
     
     private var dateKey: String {
