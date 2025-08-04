@@ -33,18 +33,33 @@ struct PlannerPageView: View {
                 }
             }
             
+            // Page turning gesture overlay
+            PageTurnGesture(
+                onPreviousPage: {
+                    goToPreviousPage()
+                },
+                onNextPage: {
+                    goToNextPage()
+                }
+            )
+            
             // Navigation hint overlay
             VStack {
                 Spacer()
                 
                 // Navigation hint at bottom
-                Text("← Swipe to navigate between days →")
-                    .font(.caption)
-                    .foregroundColor(.black.opacity(0.5))
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.8))
-                    .cornerRadius(8)
+                VStack(spacing: 4) {
+                    Text("← Tap or drag edge areas to turn pages →")
+                        .font(.caption)
+                        .foregroundColor(.black.opacity(0.5))
+                    Text("Use toolbar to switch between pen, text, and sticky notes")
+                        .font(.caption2)
+                        .foregroundColor(.black.opacity(0.4))
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.8))
+                .cornerRadius(8)
                 .padding(.bottom, 30)
             }
         }
@@ -95,6 +110,24 @@ struct PlannerPageView: View {
     
     private func normalizeDate(_ date: Date) -> Date {
         return Calendar.current.startOfDay(for: date)
+    }
+    
+    private func goToPreviousPage() {
+        guard let currentIndex = generatedDates.firstIndex(of: selectedDate),
+              currentIndex > 0 else { return }
+        
+        withAnimation(.easeInOut(duration: 0.3)) {
+            selectedDate = generatedDates[currentIndex - 1]
+        }
+    }
+    
+    private func goToNextPage() {
+        guard let currentIndex = generatedDates.firstIndex(of: selectedDate),
+              currentIndex < generatedDates.count - 1 else { return }
+        
+        withAnimation(.easeInOut(duration: 0.3)) {
+            selectedDate = generatedDates[currentIndex + 1]
+        }
     }
 }
 

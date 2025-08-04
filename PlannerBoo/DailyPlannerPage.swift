@@ -162,7 +162,7 @@ struct DailyPlannerPage: View {
                             VStack(spacing: 24) {
                                 // Main writing/drawing area with overlays
                                 ZStack {
-                                    // Drawing canvas (bottom layer)
+                                    // Drawing canvas (bottom layer) - with edge exclusion
                                     DrawingCanvasView(
                                         canvasView: $canvasView,
                                         selectedTool: $selectedTool,
@@ -173,6 +173,7 @@ struct DailyPlannerPage: View {
                                     )
                                     .frame(height: max(800, geometry.size.height - 200))
                                     .background(Color.clear)
+                                    .padding(.horizontal, 60) // Exclude 60pt edges from drawing
                                     
                                     // Photo overlay (middle layer)
                                     DraggablePhotoOverlay(date: date)
@@ -181,6 +182,7 @@ struct DailyPlannerPage: View {
                                     // Text input overlay (top layer) - responds to tool mode
                                     TextInputOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
+                                        .padding(.horizontal, 60) // Exclude 60pt edges from text input
                                 }
                                 .padding(.horizontal, 32)
                             }

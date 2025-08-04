@@ -41,6 +41,14 @@ struct PermissionsOnboardingView: View {
                         isGranted: permissionsManager.remindersAccess,
                         color: .orange
                     )
+                    
+                    PermissionRow(
+                        icon: "heart.fill",
+                        title: "Health & Fitness",
+                        description: "Track steps and workouts in your planner",
+                        isGranted: permissionsManager.healthAccess,
+                        color: .red
+                    )
                 }
                 
                 Spacer()
@@ -85,13 +93,17 @@ struct PermissionsOnboardingView: View {
         .onChange(of: permissionsManager.remindersAccess) {
             checkAllPermissions()
         }
+        .onChange(of: permissionsManager.healthAccess) {
+            checkAllPermissions()
+        }
     }
     
     private func checkAllPermissions() {
         // Auto-dismiss if user has granted all permissions
         if permissionsManager.photosAccess && 
            permissionsManager.calendarAccess && 
-           permissionsManager.remindersAccess {
+           permissionsManager.remindersAccess &&
+           permissionsManager.healthAccess {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 showOnboarding = false
             }
