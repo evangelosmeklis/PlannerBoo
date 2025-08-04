@@ -20,11 +20,11 @@ struct HealthDataView: View {
                     .font(.largeTitle)
                     .foregroundColor(.red)
                 
-                Text("Health integration coming soon")
+                Text("Track your daily wellness")
                     .font(.body)
                     .foregroundColor(.secondary)
                 
-                Text("Step count, workouts, and health metrics will be displayed here")
+                Text("Record your mood, energy level, and daily reflections")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

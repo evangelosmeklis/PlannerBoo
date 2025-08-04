@@ -6,73 +6,47 @@ struct PermissionsOnboardingView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 32) {
-                VStack(spacing: 16) {
-                    Image(systemName: "book.pages")
-                        .font(.system(size: 80))
-                        .foregroundColor(.blue)
-                    
-                    Text("Welcome to PlannerBoo")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text("Your digital planner needs access to these features to provide the best experience")
-                        .font(.body)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
-                }
+            VStack(spacing: 24) {
+                Text("Welcome to PlannerBoo")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
                 
-                VStack(spacing: 20) {
+                Text("To get the most out of your planner, we need a few permissions")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                VStack(spacing: 16) {
                     PermissionRow(
                         icon: "photo.on.rectangle",
                         title: "Photos",
-                        description: "Add photos to your planner pages",
+                        description: "Add images to your planner pages",
                         isGranted: permissionsManager.photosAccess,
                         color: .green
                     )
                     
-                    // Temporarily disabled permissions - coming soon
-                    VStack(spacing: 12) {
-                        Text("Coming Soon")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        
-                        VStack(spacing: 8) {
-                            HStack {
-                                Image(systemName: "calendar")
-                                    .foregroundColor(.secondary)
-                                Text("Calendar Integration")
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                            
-                            HStack {
-                                Image(systemName: "list.bullet")
-                                    .foregroundColor(.secondary)
-                                Text("Reminders Integration")
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                            
-                            HStack {
-                                Image(systemName: "heart.fill")
-                                    .foregroundColor(.secondary)
-                                Text("Health & Fitness Data")
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                        }
-                        .font(.caption)
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
+                    PermissionRow(
+                        icon: "calendar",
+                        title: "Calendar",
+                        description: "Create and sync events with your calendar",
+                        isGranted: permissionsManager.calendarAccess,
+                        color: .blue
+                    )
+                    
+                    PermissionRow(
+                        icon: "list.bullet",
+                        title: "Reminders",
+                        description: "Create and manage reminders",
+                        isGranted: permissionsManager.remindersAccess,
+                        color: .orange
+                    )
                 }
                 
                 Spacer()
                 
                 VStack(spacing: 16) {
-                    Button("Grant Photos Access") {
+                    Button("Grant All Permissions") {
                         permissionsManager.requestAllPermissions()
                     }
                     .buttonStyle(.borderedProminent)
@@ -102,12 +76,22 @@ struct PermissionsOnboardingView: View {
                 }
             )
         }
-        .onChange(of: permissionsManager.photosAccess) { checkAllPermissions() }
+        .onChange(of: permissionsManager.photosAccess) { 
+            checkAllPermissions()
+        }
+        .onChange(of: permissionsManager.calendarAccess) {
+            checkAllPermissions()
+        }
+        .onChange(of: permissionsManager.remindersAccess) {
+            checkAllPermissions()
+        }
     }
     
     private func checkAllPermissions() {
-        // Auto-dismiss if user has granted Photos permission
-        if permissionsManager.photosAccess {
+        // Auto-dismiss if user has granted all permissions
+        if permissionsManager.photosAccess && 
+           permissionsManager.calendarAccess && 
+           permissionsManager.remindersAccess {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 showOnboarding = false
             }
@@ -132,6 +116,8 @@ struct PermissionRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
+                    .foregroundColor(.primary)
+                
                 Text(description)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -141,16 +127,15 @@ struct PermissionRow: View {
             
             if isGranted {
                 Image(systemName: "checkmark.circle.fill")
+                    .font(.title2)
                     .foregroundColor(.green)
-                    .font(.title2)
             } else {
-                Image(systemName: "circle")
-                    .foregroundColor(.secondary)
-                    .font(.title2)
+                Circle()
+                    .stroke(Color.secondary, lineWidth: 2)
+                    .frame(width: 24, height: 24)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
     }
@@ -158,7 +143,8 @@ struct PermissionRow: View {
 
 #Preview {
     @Previewable @State var showOnboarding = true
-    return PermissionsOnboardingView(
+    
+    PermissionsOnboardingView(
         permissionsManager: PermissionsManager(),
         showOnboarding: $showOnboarding
     )

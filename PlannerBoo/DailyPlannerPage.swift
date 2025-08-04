@@ -3,6 +3,7 @@ import PencilKit
 
 struct DailyPlannerPage: View {
     let date: Date
+    let onDateSelected: ((Date) -> Void)?
     @State private var canvasView = PKCanvasView()
     @State private var showingPhotoPicker = false
     @State private var showingEventCreator = false
@@ -157,21 +158,6 @@ struct DailyPlannerPage: View {
                         
                         ScrollView {
                             VStack(spacing: 24) {
-                                // Health data section (compact)
-                                if permissionsManager.photosAccess {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Today's Highlights")
-                                            .font(.custom("Georgia", size: 14))
-                                            .foregroundColor(.black.opacity(0.7))
-                                            .tracking(0.5)
-                                        
-                                        HealthDataView(date: date)
-                                    }
-                                    .padding(.horizontal, 32)
-                                    .padding(.top, 16)
-                                }
-                                
-                                
                                 // Main writing/drawing area with overlays
                                 ZStack {
                                     // Drawing canvas
@@ -207,7 +193,11 @@ struct DailyPlannerPage: View {
             EventCreatorView(date: date)
         }
         .sheet(isPresented: $showingOverview) {
-            OverviewView()
+            OverviewView(onDateSelected: { selectedDate in
+                // Navigate to the selected date and dismiss the sheet
+                onDateSelected?(selectedDate)
+                showingOverview = false
+            })
         }
     }
 }
@@ -281,6 +271,6 @@ struct LinedPaperBackground: View {
 }
 
 #Preview {
-    DailyPlannerPage(date: Date())
+    DailyPlannerPage(date: Date(), onDateSelected: nil)
         .environmentObject(PermissionsManager())
 }

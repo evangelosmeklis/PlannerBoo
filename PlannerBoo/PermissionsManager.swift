@@ -17,20 +17,15 @@ class PermissionsManager: ObservableObject {
     }
     
     func checkPermissions() {
-        // Temporarily disable to avoid crashes
-        // checkCalendarAccess()
-        // checkRemindersAccess()
-        // checkHealthAccess()
+        checkCalendarAccess()
+        checkRemindersAccess()
         checkPhotosAccess()
     }
     
     func requestAllPermissions() {
         Task {
-            // Temporarily disable calendar and reminders to avoid crashes
-            // await requestCalendarAccess()
-            // await requestRemindersAccess()
-            // Skip health access for now due to Info.plist requirements
-            // await requestHealthAccess()
+            await requestCalendarAccess()
+            await requestRemindersAccess()
             await requestPhotosAccess()
         }
     }
@@ -38,19 +33,12 @@ class PermissionsManager: ObservableObject {
     // MARK: - Calendar Permissions
     
     private func checkCalendarAccess() {
-        // Temporarily disabled to avoid crashes
-        calendarAccess = false
-        /*
         Task { @MainActor in
             calendarAccess = EKEventStore.authorizationStatus(for: .event) == .fullAccess
         }
-        */
     }
     
     func requestCalendarAccess() async {
-        // Temporarily disabled to avoid crashes
-        return
-        /*
         do {
             let granted = try await eventStore.requestFullAccessToEvents()
             await MainActor.run {
@@ -58,26 +46,21 @@ class PermissionsManager: ObservableObject {
             }
         } catch {
             print("Calendar access request failed: \(error)")
+            await MainActor.run {
+                calendarAccess = false
+            }
         }
-        */
     }
     
     // MARK: - Reminders Permissions
     
     private func checkRemindersAccess() {
-        // Temporarily disabled to avoid crashes
-        remindersAccess = false
-        /*
         Task { @MainActor in
             remindersAccess = EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
         }
-        */
     }
     
     func requestRemindersAccess() async {
-        // Temporarily disabled to avoid crashes
-        return
-        /*
         do {
             let granted = try await eventStore.requestFullAccessToReminders()
             await MainActor.run {
@@ -85,8 +68,10 @@ class PermissionsManager: ObservableObject {
             }
         } catch {
             print("Reminders access request failed: \(error)")
+            await MainActor.run {
+                remindersAccess = false
+            }
         }
-        */
     }
     
     // MARK: - Health Permissions

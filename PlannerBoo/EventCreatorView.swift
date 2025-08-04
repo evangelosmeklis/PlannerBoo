@@ -98,35 +98,83 @@ struct EventCreatorView: View {
     }
     
     private func createCalendarEvent(title: String, date: Date) {
-        let event = EKEvent(eventStore: eventStore)
-        event.title = title
-        event.startDate = date
-        event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date
-        event.calendar = eventStore.defaultCalendarForNewEvents
-        
-        do {
-            try eventStore.save(event, span: .thisEvent)
-            alertMessage = "Event created successfully in Calendar!"
-            showingAlert = true
-        } catch {
-            alertMessage = "Failed to create event: \(error.localizedDescription)"
-            showingAlert = true
+        // Check if we have permission first
+        eventStore.requestFullAccessToEvents { granted, error in
+            DispatchQueue.main.async {
+                if granted {
+                    let event = EKEvent(eventStore: self.eventStore)
+                    event.title = title
+                    event.startDate = date
+                    event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date
+                    
+                    // Try to get default calendar, if nil use first available calendar
+                    if let defaultCalendar = self.eventStore.defaultCalendarForNewEvents {
+                        event.calendar = defaultCalendar
+                    } else {
+                        // Get first writable calendar
+                        let calendars = self.eventStore.calendars(for: .event).filter { $0.allowsContentModifications }
+                        if let firstCalendar = calendars.first {
+                            event.calendar = firstCalendar
+                        } else {
+                            self.alertMessage = "No writable calendar found. Please check your Calendar app settings."
+                            self.showingAlert = true
+                            return
+                        }
+                    }
+                    
+                    do {
+                        try self.eventStore.save(event, span: .thisEvent)
+                        self.alertMessage = "Event created successfully in Calendar!"
+                        self.showingAlert = true
+                    } catch {
+                        self.alertMessage = "Failed to create event: \(error.localizedDescription)"
+                        self.showingAlert = true
+                    }
+                } else {
+                    self.alertMessage = "Calendar access is required to create events. Please enable it in Settings > Privacy & Security > Calendars."
+                    self.showingAlert = true
+                }
+            }
         }
     }
     
     private func createReminder(title: String, date: Date) {
-        let reminder = EKReminder(eventStore: eventStore)
-        reminder.title = title
-        reminder.dueDateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        reminder.calendar = eventStore.defaultCalendarForNewReminders()
-        
-        do {
-            try eventStore.save(reminder, commit: true)
-            alertMessage = "Reminder created successfully!"
-            showingAlert = true
-        } catch {
-            alertMessage = "Failed to create reminder: \(error.localizedDescription)"
-            showingAlert = true
+        // Check if we have permission first
+        eventStore.requestFullAccessToReminders { granted, error in
+            DispatchQueue.main.async {
+                if granted {
+                    let reminder = EKReminder(eventStore: self.eventStore)
+                    reminder.title = title
+                    reminder.dueDateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+                    
+                    // Try to get default calendar, if nil use first available calendar
+                    if let defaultCalendar = self.eventStore.defaultCalendarForNewReminders() {
+                        reminder.calendar = defaultCalendar
+                    } else {
+                        // Get first writable reminder list
+                        let calendars = self.eventStore.calendars(for: .reminder).filter { $0.allowsContentModifications }
+                        if let firstCalendar = calendars.first {
+                            reminder.calendar = firstCalendar
+                        } else {
+                            self.alertMessage = "No writable reminder list found. Please check your Reminders app settings."
+                            self.showingAlert = true
+                            return
+                        }
+                    }
+                    
+                    do {
+                        try self.eventStore.save(reminder, commit: true)
+                        self.alertMessage = "Reminder created successfully!"
+                        self.showingAlert = true
+                    } catch {
+                        self.alertMessage = "Failed to create reminder: \(error.localizedDescription)"
+                        self.showingAlert = true
+                    }
+                } else {
+                    self.alertMessage = "Reminders access is required to create reminders. Please enable it in Settings > Privacy & Security > Reminders."
+                    self.showingAlert = true
+                }
+            }
         }
     }
 }
