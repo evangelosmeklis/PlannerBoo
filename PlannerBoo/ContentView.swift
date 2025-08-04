@@ -8,17 +8,35 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var permissionsManager: PermissionsManager
+    @State private var showOnboarding = true
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if showOnboarding {
+                PermissionsOnboardingView(
+                    permissionsManager: permissionsManager,
+                    showOnboarding: $showOnboarding
+                )
+            } else {
+                PlannerPageView()
+            }
         }
-        .padding()
+        .onAppear {
+            // Check permissions when view appears
+            permissionsManager.checkPermissions()
+            
+            // Small delay to let permissions check complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if permissionsManager.photosAccess {
+                    showOnboarding = false
+                }
+            }
+        }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(PermissionsManager())
 }

@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct PlannerBooApp: App {
+    @StateObject private var permissionsManager = PermissionsManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(permissionsManager)
+                .preferredColorScheme(.light)
         }
+        .windowResizability(.contentSize)
     }
 }
