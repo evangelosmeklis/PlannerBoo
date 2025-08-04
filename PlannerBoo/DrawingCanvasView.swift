@@ -6,8 +6,9 @@ struct DrawingCanvasView: UIViewRepresentable {
     let date: Date
     
     func makeUIView(context: Context) -> PKCanvasView {
-        canvasView.drawingPolicy = .anyInput
-        canvasView.backgroundColor = UIColor.white
+        canvasView.drawingPolicy = .pencilOnly // Only Apple Pencil, not finger
+        canvasView.backgroundColor = UIColor.clear // Make transparent to show lined paper
+        canvasView.isOpaque = false
         
         // Load existing drawing for this date if available
         loadDrawing()
