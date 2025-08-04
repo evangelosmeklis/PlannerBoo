@@ -124,7 +124,7 @@ struct PageTurnArea: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.black.opacity(showHint ? 0.08 : 0.03),
+                            Color.blue.opacity(showHint ? 0.1 : 0.05),
                             Color.clear
                         ],
                         startPoint: isLeft ? .leading : .trailing,
@@ -144,15 +144,16 @@ struct PageTurnArea: View {
             VStack {
                 Spacer()
                 
-                Image(systemName: isLeft ? "chevron.left" : "chevron.right")
-                    .font(.title2)
-                    .foregroundColor(.black.opacity(showHint ? 0.4 : 0.15))
-                    .scaleEffect(showHint ? 1.2 : 1.0)
+                Image(systemName: isLeft ? "chevron.left.circle.fill" : "chevron.right.circle.fill")
+                    .font(.title)
+                    .foregroundColor(showHint ? .blue : .blue.opacity(0.6))
+                    .scaleEffect(showHint ? 1.3 : 1.0)
                     .animation(.easeInOut(duration: 0.2), value: showHint)
                 
                 Text(isLeft ? "Previous" : "Next")
-                    .font(.caption2)
-                    .foregroundColor(.black.opacity(showHint ? 0.4 : 0.15))
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(showHint ? .blue : .blue.opacity(0.6))
                     .animation(.easeInOut(duration: 0.2), value: showHint)
                 
                 Spacer()

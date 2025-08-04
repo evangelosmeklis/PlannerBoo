@@ -7,6 +7,11 @@ struct DraggablePhotoOverlay: View {
     
     var body: some View {
         ZStack {
+            // Always have a transparent background that doesn't interfere with hit testing
+            Color.clear
+                .allowsHitTesting(false)
+            
+            // Only show photos if they exist
             ForEach(photoItems) { item in
                 DraggablePhoto(
                     photoItem: item,
@@ -220,6 +225,7 @@ struct DraggablePhoto: View {
         return borderedImage
             .overlay(resizeHandle)
             .position(photoItem.position)
+            .contentShape(RoundedRectangle(cornerRadius: 8)) // Only respond to hits within the image bounds
             .onTapGesture { 
                 isSelected.toggle()
                 initialSize = photoItem.size

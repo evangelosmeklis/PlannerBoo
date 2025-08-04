@@ -43,25 +43,7 @@ struct PlannerPageView: View {
                 }
             )
             
-            // Navigation hint overlay
-            VStack {
-                Spacer()
-                
-                // Navigation hint at bottom
-                VStack(spacing: 4) {
-                    Text("← Tap or drag edge areas to turn pages →")
-                        .font(.caption)
-                        .foregroundColor(.black.opacity(0.5))
-                    Text("Use toolbar to switch between pen, text, and sticky notes")
-                        .font(.caption2)
-                        .foregroundColor(.black.opacity(0.4))
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.8))
-                .cornerRadius(8)
-                .padding(.bottom, 30)
-            }
+
         }
     }
     
