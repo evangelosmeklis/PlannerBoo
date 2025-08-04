@@ -16,8 +16,7 @@ struct DrawingCanvasView: UIViewRepresentable {
         canvasView.isOpaque = false
         canvasView.delegate = context.coordinator
         
-        // Allow both finger and pencil drawing
-        canvasView.allowsFingerDrawing = true
+        // Enable multi-touch for better input handling
         canvasView.isMultipleTouchEnabled = true
         
         // Set initial tool

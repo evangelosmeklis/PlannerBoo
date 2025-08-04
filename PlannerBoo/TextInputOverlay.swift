@@ -255,7 +255,7 @@ struct TextInputOverlay: View {
             loadTextBoxes()
             loadStickyNotes()
         }
-        .onChange(of: date) { _ in
+        .onChange(of: date) { oldDate, newDate in
             // Save any current text before switching dates
             if showingInlineEditor && !newText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 let newBox = TextBox(

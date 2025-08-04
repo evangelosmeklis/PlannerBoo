@@ -3,18 +3,28 @@ import Photos
 
 struct DraggablePhotoOverlay: View {
     @State private var photoItems: [PhotoItem] = []
+    @State private var selectedPhotoId: UUID?
     let date: Date
     
     var body: some View {
         ZStack {
-            // Always have a transparent background that doesn't interfere with hit testing
+            // Transparent background for deselecting photos
             Color.clear
-                .allowsHitTesting(false)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // Deselect any selected photo when tapping empty space
+                    selectedPhotoId = nil
+                }
+                .allowsHitTesting(selectedPhotoId != nil) // Only intercept taps when a photo is selected
             
             // Only show photos if they exist
             ForEach(photoItems) { item in
                 DraggablePhoto(
                     photoItem: item,
+                    isSelected: selectedPhotoId == item.id,
+                    onSelect: {
+                        selectedPhotoId = selectedPhotoId == item.id ? nil : item.id
+                    },
                     onMove: { newPosition in
                         updatePhotoPosition(id: item.id, position: newPosition)
                     },
@@ -23,6 +33,7 @@ struct DraggablePhotoOverlay: View {
                     },
                     onDelete: {
                         deletePhoto(id: item.id)
+                        selectedPhotoId = nil
                     }
                 )
             }
@@ -170,11 +181,11 @@ struct PhotoMetadata: Codable {
 
 struct DraggablePhoto: View {
     let photoItem: PhotoItem
+    let isSelected: Bool
+    let onSelect: () -> Void
     let onMove: (CGPoint) -> Void
     let onResize: (CGSize) -> Void
     let onDelete: () -> Void
-    
-    @State private var isSelected = false
     
     var body: some View {
         let baseImage = Image(uiImage: photoItem.image)
@@ -227,22 +238,27 @@ struct DraggablePhoto: View {
             .position(photoItem.position)
             .contentShape(RoundedRectangle(cornerRadius: 8)) // Only respond to hits within the image bounds
             .onTapGesture { 
-                isSelected.toggle()
+                onSelect()
                 initialSize = photoItem.size
                 initialPosition = photoItem.position
             }
             .gesture(
-                DragGesture(minimumDistance: 5)
+                // Only allow dragging when selected
+                DragGesture(minimumDistance: isSelected ? 5 : 1000)
                     .onChanged { value in
-                        let translation = value.translation
-                        let newPosition = CGPoint(
-                            x: initialPosition.x + translation.width,
-                            y: initialPosition.y + translation.height
-                        )
-                        onMove(newPosition)
+                        if isSelected {
+                            let translation = value.translation
+                            let newPosition = CGPoint(
+                                x: initialPosition.x + translation.width,
+                                y: initialPosition.y + translation.height
+                            )
+                            onMove(newPosition)
+                        }
                     }
                     .onEnded { _ in
-                        initialPosition = photoItem.position
+                        if isSelected {
+                            initialPosition = photoItem.position
+                        }
                     }
             )
             .contextMenu {
@@ -255,6 +271,7 @@ struct DraggablePhoto: View {
                 initialSize = photoItem.size
                 initialPosition = photoItem.position
             }
+            .allowsHitTesting(true) // Always allow hit testing for selection
     }
     
     @State private var initialSize: CGSize = CGSize.zero

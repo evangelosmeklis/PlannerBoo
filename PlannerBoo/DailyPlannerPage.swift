@@ -162,7 +162,11 @@ struct DailyPlannerPage: View {
                             VStack(spacing: 24) {
                                 // Main writing/drawing area with overlays
                                 ZStack {
-                                    // Drawing canvas (bottom layer) - with edge exclusion
+                                    // Photo overlay (bottom layer)
+                                    DraggablePhotoOverlay(date: date)
+                                        .frame(height: max(800, geometry.size.height - 200))
+                                    
+                                    // Drawing canvas (middle layer) - can draw over photos
                                     DrawingCanvasView(
                                         canvasView: $canvasView,
                                         selectedTool: $selectedTool,
@@ -174,15 +178,13 @@ struct DailyPlannerPage: View {
                                     .frame(height: max(800, geometry.size.height - 200))
                                     .background(Color.clear)
                                     .padding(.horizontal, 60) // Exclude 60pt edges from drawing
-                                    
-                                    // Photo overlay (middle layer)
-                                    DraggablePhotoOverlay(date: date)
-                                        .frame(height: max(800, geometry.size.height - 200))
+                                    .allowsHitTesting(toolMode == .pen || toolMode == .eraser)
                                     
                                     // Text input overlay (top layer) - responds to tool mode
                                     TextInputOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
                                         .padding(.horizontal, 60) // Exclude 60pt edges from text input
+                                        .allowsHitTesting(toolMode == .text || toolMode == .stickyNote)
                                 }
                                 .padding(.horizontal, 32)
                             }

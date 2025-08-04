@@ -28,7 +28,11 @@ struct ContentView: View {
             
             // Small delay to let permissions check complete
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if permissionsManager.photosAccess {
+                // Skip onboarding if user has already granted some permissions
+                if permissionsManager.photosAccess || 
+                   permissionsManager.calendarAccess || 
+                   permissionsManager.remindersAccess || 
+                   permissionsManager.healthAccess {
                     showOnboarding = false
                 }
             }

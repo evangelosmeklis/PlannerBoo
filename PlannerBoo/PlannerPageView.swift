@@ -26,7 +26,7 @@ struct PlannerPageView: View {
                     isInitialized = true
                 }
             }
-            .onChange(of: selectedDate) { newDate in
+            .onChange(of: selectedDate) { oldDate, newDate in
                 // Only check for regeneration if we're initialized and not currently regenerating
                 if isInitialized {
                     checkAndRegenerateDates(for: newDate)

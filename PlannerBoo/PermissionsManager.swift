@@ -3,6 +3,10 @@ import EventKit
 import Photos
 import HealthKit
 
+enum PermissionType {
+    case photos, calendar, reminders, health
+}
+
 @MainActor
 class PermissionsManager: ObservableObject {
     @Published var calendarAccess = false
@@ -14,8 +18,13 @@ class PermissionsManager: ObservableObject {
     private let healthStore = HKHealthStore()
     
     init() {
-        // Don't check permissions immediately to avoid crashes
-        // checkPermissions()
+        // Check permissions after a brief delay to avoid crashes
+        Task {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second delay
+            await MainActor.run {
+                checkPermissions()
+            }
+        }
     }
     
     func checkPermissions() {
@@ -27,10 +36,36 @@ class PermissionsManager: ObservableObject {
     
     func requestAllPermissions() {
         Task {
+            // Request permissions sequentially to avoid conflicts
+            await requestPhotosAccess()
             await requestCalendarAccess()
             await requestRemindersAccess()
-            await requestPhotosAccess()
             await requestHealthAccess()
+            
+            // Check all permissions after requesting
+            await MainActor.run {
+                checkPermissions()
+            }
+        }
+    }
+    
+    func requestIndividualPermission(for type: PermissionType) {
+        Task {
+            switch type {
+            case .photos:
+                await requestPhotosAccess()
+            case .calendar:
+                await requestCalendarAccess()
+            case .reminders:
+                await requestRemindersAccess()
+            case .health:
+                await requestHealthAccess()
+            }
+            
+            // Check permissions after requesting
+            await MainActor.run {
+                checkPermissions()
+            }
         }
     }
     
@@ -39,21 +74,28 @@ class PermissionsManager: ObservableObject {
     private func checkCalendarAccess() {
         Task { @MainActor in
             let status = EKEventStore.authorizationStatus(for: .event)
-            calendarAccess = status == .fullAccess || status == .authorized
+            if #available(iOS 17.0, *) {
+                calendarAccess = status == .fullAccess
+            } else {
+                calendarAccess = status == .authorized
+            }
         }
     }
     
     func requestCalendarAccess() async {
+        print("Requesting calendar access...")
         do {
             // Try the new iOS 17+ method first
             if #available(iOS 17.0, *) {
                 let granted = try await eventStore.requestFullAccessToEvents()
+                print("Calendar access granted: \(granted)")
                 await MainActor.run {
                     calendarAccess = granted
                 }
             } else {
                 // Fallback for older iOS versions
                 let granted = try await eventStore.requestAccess(to: .event)
+                print("Calendar access granted (legacy): \(granted)")
                 await MainActor.run {
                     calendarAccess = granted
                 }
@@ -71,21 +113,28 @@ class PermissionsManager: ObservableObject {
     private func checkRemindersAccess() {
         Task { @MainActor in
             let status = EKEventStore.authorizationStatus(for: .reminder)
-            remindersAccess = status == .fullAccess || status == .authorized
+            if #available(iOS 17.0, *) {
+                remindersAccess = status == .fullAccess
+            } else {
+                remindersAccess = status == .authorized
+            }
         }
     }
     
     func requestRemindersAccess() async {
+        print("Requesting reminders access...")
         do {
             // Try the new iOS 17+ method first
             if #available(iOS 17.0, *) {
                 let granted = try await eventStore.requestFullAccessToReminders()
+                print("Reminders access granted: \(granted)")
                 await MainActor.run {
                     remindersAccess = granted
                 }
             } else {
                 // Fallback for older iOS versions
                 let granted = try await eventStore.requestAccess(to: .reminder)
+                print("Reminders access granted (legacy): \(granted)")
                 await MainActor.run {
                     remindersAccess = granted
                 }
@@ -122,7 +171,16 @@ class PermissionsManager: ObservableObject {
     }
     
     func requestHealthAccess() async {
+        print("HealthKit temporarily disabled - entitlement required")
+        await MainActor.run {
+            healthAccess = false
+        }
+        return
+        
+        /*
+        print("Requesting health access...")
         guard HKHealthStore.isHealthDataAvailable() else { 
+            print("Health data not available on this device")
             await MainActor.run {
                 healthAccess = false
             }
@@ -130,6 +188,7 @@ class PermissionsManager: ObservableObject {
         }
         
         guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            print("Step count type not available")
             await MainActor.run {
                 healthAccess = false
             }
@@ -141,6 +200,7 @@ class PermissionsManager: ObservableObject {
         
         do {
             try await healthStore.requestAuthorization(toShare: Set<HKSampleType>(), read: readTypes)
+            print("Health authorization request completed")
             await MainActor.run {
                 checkHealthAccess()
             }
@@ -150,6 +210,7 @@ class PermissionsManager: ObservableObject {
                 healthAccess = false
             }
         }
+        */
     }
     
     // MARK: - Photos Permissions

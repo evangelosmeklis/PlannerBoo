@@ -23,7 +23,10 @@ struct PermissionsOnboardingView: View {
                         title: "Photos",
                         description: "Add images to your planner pages",
                         isGranted: permissionsManager.photosAccess,
-                        color: .green
+                        color: .green,
+                        onTap: {
+                            permissionsManager.requestIndividualPermission(for: .photos)
+                        }
                     )
                     
                     PermissionRow(
@@ -31,7 +34,10 @@ struct PermissionsOnboardingView: View {
                         title: "Calendar",
                         description: "Create and sync events with your calendar",
                         isGranted: permissionsManager.calendarAccess,
-                        color: .blue
+                        color: .blue,
+                        onTap: {
+                            permissionsManager.requestIndividualPermission(for: .calendar)
+                        }
                     )
                     
                     PermissionRow(
@@ -39,15 +45,21 @@ struct PermissionsOnboardingView: View {
                         title: "Reminders",
                         description: "Create and manage reminders",
                         isGranted: permissionsManager.remindersAccess,
-                        color: .orange
+                        color: .orange,
+                        onTap: {
+                            permissionsManager.requestIndividualPermission(for: .reminders)
+                        }
                     )
                     
                     PermissionRow(
                         icon: "heart.fill",
                         title: "Health & Fitness",
-                        description: "Track steps and workouts in your planner",
-                        isGranted: permissionsManager.healthAccess,
-                        color: .red
+                        description: "Requires HealthKit entitlement in Xcode",
+                        isGranted: false,
+                        color: .gray,
+                        onTap: {
+                            // Show alert about entitlement requirement
+                        }
                     )
                 }
                 
@@ -84,26 +96,25 @@ struct PermissionsOnboardingView: View {
                 }
             )
         }
-        .onChange(of: permissionsManager.photosAccess) { 
+        .onChange(of: permissionsManager.photosAccess) { oldValue, newValue in
             checkAllPermissions()
         }
-        .onChange(of: permissionsManager.calendarAccess) {
+        .onChange(of: permissionsManager.calendarAccess) { oldValue, newValue in
             checkAllPermissions()
         }
-        .onChange(of: permissionsManager.remindersAccess) {
+        .onChange(of: permissionsManager.remindersAccess) { oldValue, newValue in
             checkAllPermissions()
         }
-        .onChange(of: permissionsManager.healthAccess) {
+        .onChange(of: permissionsManager.healthAccess) { oldValue, newValue in
             checkAllPermissions()
         }
     }
     
     private func checkAllPermissions() {
-        // Auto-dismiss if user has granted all permissions
+        // Auto-dismiss if user has granted main permissions (HealthKit requires entitlement)
         if permissionsManager.photosAccess && 
            permissionsManager.calendarAccess && 
-           permissionsManager.remindersAccess &&
-           permissionsManager.healthAccess {
+           permissionsManager.remindersAccess {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 showOnboarding = false
             }
@@ -117,39 +128,58 @@ struct PermissionRow: View {
     let description: String
     let isGranted: Bool
     let color: Color
+    let onTap: () -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-                .frame(width: 32)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        Button(action: {
+            if !isGranted {
+                onTap()
             }
-            
-            Spacer()
-            
-            if isGranted {
-                Image(systemName: "checkmark.circle.fill")
+        }) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(.green)
-            } else {
-                Circle()
-                    .stroke(Color.secondary, lineWidth: 2)
-                    .frame(width: 24, height: 24)
+                    .foregroundColor(color)
+                    .frame(width: 32)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                if isGranted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                } else {
+                    HStack(spacing: 8) {
+                        Text("Tap to Grant")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        
+                        Image(systemName: "hand.tap")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
             }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isGranted ? Color.green.opacity(0.3) : Color.blue.opacity(0.3), lineWidth: isGranted ? 2 : 1)
+            )
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .buttonStyle(PlainButtonStyle())
+        .disabled(isGranted)
     }
 }
 

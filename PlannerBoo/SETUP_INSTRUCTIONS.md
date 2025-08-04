@@ -1,18 +1,20 @@
 # PlannerBoo Setup Instructions
 
-## Required Info.plist Entries
+## 🚨 CRITICAL: Info.plist Configuration Required
 
-To enable all permissions in PlannerBoo, you need to add the following entries to your Info.plist file through Xcode:
+**The app will crash when requesting Calendar, Reminders, and Health permissions without proper Info.plist entries.**
 
-### How to Add Info.plist Entries:
+### Step-by-Step Setup:
 
+#### 1. Open Xcode Project Settings
 1. Open your project in Xcode
-2. Select the PlannerBoo target
-3. Go to the "Info" tab
-4. Click the "+" button to add new entries
-5. Add each of the following keys with their descriptions:
+2. Select the **PlannerBoo** target (not the project)
+3. Go to the **"Info"** tab
+4. Look for the "Custom iOS Target Properties" section
 
-### Required Entries:
+#### 2. Add Required Permission Descriptions
+
+Click the **"+"** button next to any existing entry and add these **exact** keys:
 
 | Key | Type | Value |
 |-----|------|-------|
@@ -22,6 +24,39 @@ To enable all permissions in PlannerBoo, you need to add the following entries t
 | `NSRemindersUsageDescription` | String | `PlannerBoo needs access to your reminders to create and manage tasks from your planner.` |
 | `NSPhotoLibraryUsageDescription` | String | `PlannerBoo needs access to your photo library to add images to your planner pages.` |
 | `NSPhotoLibraryAddUsageDescription` | String | `PlannerBoo needs permission to save images to your photo library from your planner.` |
+
+#### 3. Enable Permissions in Code
+
+After adding Info.plist entries, uncomment the permission code in `PermissionsManager.swift`:
+
+1. Find the `checkCalendarAccess()`, `checkRemindersAccess()`, and `checkHealthAccess()` methods
+2. Uncomment the code inside each method
+3. Find the `requestCalendarAccess()`, `requestRemindersAccess()`, and `requestHealthAccess()` methods  
+4. Uncomment the code inside each method
+5. Update the onboarding view to re-enable the permission rows
+
+#### 4. Add HealthKit Entitlement (Optional)
+
+For HealthKit to work, you also need to add the capability:
+
+1. **Select PlannerBoo target** → **"Signing & Capabilities" tab**
+2. **Click "+ Capability"**
+3. **Search for "HealthKit"** and double-click to add
+4. **Verify** it shows as "HealthKit ✓"
+
+#### 5. Enable HealthKit in Code (After Adding Entitlement)
+
+After adding the HealthKit entitlement, uncomment the HealthKit code in `PermissionsManager.swift`.
+
+## Current Status
+
+**✅ Working Permissions:**
+- Photos
+- Calendar  
+- Reminders
+
+**⚠️ Disabled Permissions (require HealthKit entitlement):**
+- Health & Fitness
 
 ## Features
 
