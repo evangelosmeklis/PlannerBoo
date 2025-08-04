@@ -6,18 +6,19 @@ struct DrawingCanvasView: UIViewRepresentable {
     @Binding var selectedTool: PKInkingTool
     @Binding var showEraser: Bool
     @Binding var eraserSize: CGFloat
+    @Binding var toolMode: ToolMode
     let date: Date
     
     func makeUIView(context: Context) -> PKCanvasView {
-        // Configure for Apple Pencil only to ensure proper detection
-        canvasView.drawingPolicy = .pencilOnly
+        // Configure for both pencil and finger input
+        canvasView.drawingPolicy = .anyInput
         canvasView.backgroundColor = UIColor.clear
         canvasView.isOpaque = false
         canvasView.delegate = context.coordinator
         
-        // Disable finger drawing to force pencil detection
-        canvasView.allowsFingerDrawing = false
-        canvasView.isMultipleTouchEnabled = false
+        // Allow both finger and pencil drawing
+        canvasView.allowsFingerDrawing = true
+        canvasView.isMultipleTouchEnabled = true
         
         // Set initial tool
         canvasView.tool = selectedTool
@@ -29,6 +30,9 @@ struct DrawingCanvasView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: PKCanvasView, context: Context) {
+        // Enable/disable drawing based on tool mode
+        uiView.isUserInteractionEnabled = (toolMode == .pen || toolMode == .eraser)
+        
         // Update tool when selection changes
         if showEraser {
             uiView.tool = PKEraserTool(.bitmap, width: eraserSize)
@@ -128,12 +132,14 @@ struct DrawingCanvasView: UIViewRepresentable {
     @Previewable @State var selectedTool = PKInkingTool(.pen, color: .black, width: 5)
     @Previewable @State var showEraser = false
     @Previewable @State var eraserSize: CGFloat = 20
+    @Previewable @State var toolMode: ToolMode = .pen
     
     DrawingCanvasView(
         canvasView: $canvasView,
         selectedTool: $selectedTool,
         showEraser: $showEraser,
         eraserSize: $eraserSize,
+        toolMode: $toolMode,
         date: Date()
     )
 }

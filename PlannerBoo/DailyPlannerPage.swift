@@ -12,6 +12,7 @@ struct DailyPlannerPage: View {
     @State private var showEraser = false
     @State private var showDrawingToolbar = true
     @State private var eraserSize: CGFloat = 40
+    @State private var toolMode: ToolMode = .pen
     @EnvironmentObject var permissionsManager: PermissionsManager
     
     private var dateFormatter: DateFormatter {
@@ -127,12 +128,13 @@ struct DailyPlannerPage: View {
                                 }
                                 .padding(.top, 8)
                                 
-                                // Drawing toolbar positioned right below action buttons
+                                // Unified toolbar positioned right below action buttons
                                 if showDrawingToolbar {
-                                    DrawingToolbar(
+                                    UnifiedToolbar(
                                         selectedTool: $selectedTool,
                                         showEraser: $showEraser,
-                                        eraserSize: $eraserSize
+                                        eraserSize: $eraserSize,
+                                        toolMode: $toolMode
                                     )
                                     .padding(.top, 12)
                                 }
@@ -160,23 +162,24 @@ struct DailyPlannerPage: View {
                             VStack(spacing: 24) {
                                 // Main writing/drawing area with overlays
                                 ZStack {
-                                    // Drawing canvas
+                                    // Drawing canvas (bottom layer)
                                     DrawingCanvasView(
                                         canvasView: $canvasView,
                                         selectedTool: $selectedTool,
                                         showEraser: $showEraser,
                                         eraserSize: $eraserSize,
+                                        toolMode: $toolMode,
                                         date: date
                                     )
                                     .frame(height: max(800, geometry.size.height - 200))
                                     .background(Color.clear)
                                     
-                                    // Photo overlay (behind text)
+                                    // Photo overlay (middle layer)
                                     DraggablePhotoOverlay(date: date)
                                         .frame(height: max(800, geometry.size.height - 200))
                                     
-                                    // Text input overlay (on top)
-                                    TextInputOverlay(date: date)
+                                    // Text input overlay (top layer) - responds to tool mode
+                                    TextInputOverlay(date: date, toolMode: $toolMode)
                                         .frame(height: max(800, geometry.size.height - 200))
                                 }
                                 .padding(.horizontal, 32)

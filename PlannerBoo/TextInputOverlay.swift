@@ -20,52 +20,18 @@ struct TextInputOverlay: View {
     @FocusState private var isStickyNoteFocused: Bool
     
     let date: Date
+    @Binding var toolMode: ToolMode
     
     var body: some View {
         ZStack {
-            // Invisible tap area for adding text
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture(count: 2) { location in
-                    // Double tap to add sticky note
-                    startStickyNoteEditing(at: location)
-                }
-                .onTapGesture { location in
-                    // Handle tap behavior based on current state
-                    let tappedOnExistingBox = textBoxes.contains { textBox in
-                        let boxFrame = CGRect(
-                            x: textBox.position.x - 50,
-                            y: textBox.position.y - 20,
-                            width: 100,
-                            height: 40
-                        )
-                        return boxFrame.contains(location)
+            // Tap area that only responds when in text or sticky note mode
+            if toolMode == .text || toolMode == .stickyNote {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleTap(at: location)
                     }
-                    
-                    let tappedOnExistingStickyNote = stickyNotes.contains { note in
-                        let noteFrame = CGRect(
-                            x: note.position.x - 75,
-                            y: note.position.y - 75,
-                            width: 150,
-                            height: 150
-                        )
-                        return noteFrame.contains(location)
-                    }
-                    
-                    if showingInlineEditor {
-                        // If currently editing, finish the current text and don't start new one
-                        finishInlineEditing()
-                    } else if !tappedOnExistingBox && !tappedOnExistingStickyNote {
-                        // Only start new editing if not tapping on existing items
-                        selectedBox = nil
-                        selectedNote = nil
-                        startInlineEditing(at: location)
-                    } else {
-                        // Clear selections if tapping elsewhere
-                        selectedBox = nil
-                        selectedNote = nil
-                    }
-                }
+            }
             
             // Existing text boxes
             ForEach(textBoxes) { textBox in
@@ -395,6 +361,52 @@ struct TextInputOverlay: View {
         }
     }
     
+    private func handleTap(at location: CGPoint) {
+        // Check if tapping on existing items
+        let tappedOnExistingBox = textBoxes.contains { textBox in
+            let boxFrame = CGRect(
+                x: textBox.position.x - 50,
+                y: textBox.position.y - 20,
+                width: 100,
+                height: 40
+            )
+            return boxFrame.contains(location)
+        }
+        
+        let tappedOnExistingStickyNote = stickyNotes.contains { note in
+            let noteFrame = CGRect(
+                x: note.position.x - 75,
+                y: note.position.y - 75,
+                width: 150,
+                height: 150
+            )
+            return noteFrame.contains(location)
+        }
+        
+        // Handle based on current tool mode
+        if toolMode == .text {
+            if showingInlineEditor {
+                finishInlineEditing()
+            } else if !tappedOnExistingBox && !tappedOnExistingStickyNote {
+                selectedBox = nil
+                selectedNote = nil
+                startInlineEditing(at: location)
+            } else {
+                selectedBox = nil
+                selectedNote = nil
+            }
+        } else if toolMode == .stickyNote {
+            if !tappedOnExistingBox && !tappedOnExistingStickyNote {
+                selectedBox = nil
+                selectedNote = nil
+                startStickyNoteEditing(at: location)
+            } else {
+                selectedBox = nil
+                selectedNote = nil
+            }
+        }
+    }
+    
     private func updateTextBoxPosition(id: UUID, position: CGPoint) {
         if let index = textBoxes.firstIndex(where: { $0.id == id }) {
             textBoxes[index].position = position
@@ -663,7 +675,10 @@ struct DraggableTextBox: View {
 }
 
 #Preview {
-    TextInputOverlay(date: Date())
+    @Previewable @State var toolMode: ToolMode = .text
+    
+    TextInputOverlay(date: Date(), toolMode: $toolMode)
         .frame(width: 400, height: 600)
         .background(Color.gray.opacity(0.1))
 }
+

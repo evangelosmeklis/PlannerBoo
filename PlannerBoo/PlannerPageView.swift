@@ -37,24 +37,14 @@ struct PlannerPageView: View {
             VStack {
                 Spacer()
                 
-                // Navigation and usage hints at bottom
-                VStack(spacing: 8) {
-                    Text("← Swipe to navigate between days →")
-                        .font(.caption)
-                        .foregroundColor(.black.opacity(0.5))
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.8))
-                        .cornerRadius(8)
-                    
-                    Text("Tap to add text • Double tap for sticky notes")
-                        .font(.caption2)
-                        .foregroundColor(.black.opacity(0.4))
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.7))
-                        .cornerRadius(6)
-                }
+                // Navigation hint at bottom
+                Text("← Swipe to navigate between days →")
+                    .font(.caption)
+                    .foregroundColor(.black.opacity(0.5))
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.8))
+                    .cornerRadius(8)
                 .padding(.bottom, 30)
             }
         }
